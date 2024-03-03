@@ -3,7 +3,7 @@ layout: page
 title: Donate
 ---
 
-# Help us out
+## Help us out
 
 - Buy me a coffee
 - Bitcon
