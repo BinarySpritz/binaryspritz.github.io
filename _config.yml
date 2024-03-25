@@ -22,10 +22,20 @@ title: BinarySpritz
 # email: your-email@example.com
 description: >- # this means to ignore newlines until "baseurl:"
   Awesome blog about computer science, artificial intelligence, cybersecurity, static analysis, data science, binary analysis.
+logo: "/assets/logo.png"
 baseurl: "/index" # the subpath of your site, e.g. /blog
 url: "https://binaryspritz.com" # the base hostname & protocol for your site, e.g. http://example.com
 github_username: BinarySpritz
 instagram_username: binaryspritz
+
+favicons: # Favicons are also used in the manifest file. Syntax is 'size: path'
+  16: '/assets/logo.ico'
+  32: '/assets/logo.ico'
+  120: '/assets/logo.ico'
+  144: '/assets/logo.ico'
+  180: '/assets/logo.ico'
+  512: '/assets/logo.ico'
+  1024: '/assets/logo.ico'
 
 # Build settings
 theme: alembic-jekyll-theme
