@@ -70,7 +70,7 @@ In other words, we are looking for a **local** gitignore file which is **not** s
 Let's give a practical example. Assume we have some executable files and we want to analyze and we create some scripts to do so. 
 
 {:refdef: style="text-align: center;"}
-![Repository](/index/assets/images/2024-04-02-gitignore/basic_structure.png)
+![Repository](/assets/images/2024-04-02-gitignore/basic_structure.png)
 {: refdef}
 
 From a logical point of view, it makes sense to keep the executable and the related analysis scripts together. It is also wise to version the scripts to keep track of your work. However, the executables are immutable so there's no point in adding them to the repository. 
