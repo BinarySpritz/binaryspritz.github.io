@@ -78,7 +78,7 @@ From a logical point of view, it makes sense to keep the executable and the rela
 If we check the status, we can see that all the files are listed:
 
 {:refdef: style="text-align: center;"}
-![Before exclude](/index/assets/images/2024-04-02-gitignore/before_exclude.png)
+![Before exclude](/assets/images/2024-04-02-gitignore/before_exclude.png)
 {: refdef}
 
 We can use the the exclude file to match all the file I want to **exclude**. The file is inside the local repository configuration directory:
@@ -92,7 +92,7 @@ echo mal_exec >> exclude    # add file name to exclude file
 Check again the git status:
 
 {:refdef: style="text-align: center;"}
-![After exclude](/index/assets/images/2024-04-02-gitignore/after_exclude.png)
+![After exclude](/assets/images/2024-04-02-gitignore/after_exclude.png)
 {: refdef}
 
 Git is now ignoring the executable. 
