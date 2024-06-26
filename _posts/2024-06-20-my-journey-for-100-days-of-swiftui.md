@@ -61,3 +61,76 @@ Two interesting facts about these data structures are:
 1. Sets are incredible faster than array when you are looking for an item inside (`.contains(…)`) but they are not ordered and cannot contains duplicates
 2. When working with enums you don’t have to write every time `WeekDays` because the compiler is capable of understating it by the variable type.
 
+# Day 4
+In Swift, you can specify the type of a variable when you declare it. If you don’t do ii, the compiler will infer the type. Up to now, it hasn’t been necessary to specify the type, but in the feature it could come in handy. 
+
+Moreover, with type specification you can declare a variable or a constant without initiating it. 
+{% highlight swift %}
+let username: String
+print(username) // Constant ‘username’ used before initialized
+username = "jjocram"
+print(username)
+{% endhighlight %}
+
+Finally, another checkpoint/exercise is proposed. In this checkpoint you have to declare a list with some duplicate, a set from the list and print both their .count showing that the set doesn’t have the duplicates.
+
+{% highlight swift %}
+let anArray: [String] = ["Apple", "Orange", "Apple", "Pear"]
+let aSetFromAnArray: Set<String> = Set(anArray)
+print("anArray has \(anArray.count) elmennts of which \(aSetFromAnArray.count) are unique")
+{% endhighlight %}
+
+# Day 5
+Conditional statement are introduced. `if-then-else`, `switch`, and `... ? ... : ...`(ternary operator) can change the flow of your program.
+
+## Example with `if-else if-else`
+{% highlight swift %}
+enum Weather {
+    case sun, rain, wind, snow, unknown
+}
+
+let todaysWeather: Weather = .sun
+
+if todaysWeather == .sun {
+    print("Let's go to the park")
+} else if todaysWeather == .rain || todaysWeather == .snow {
+    print("Let's go to the mall")
+} else if todaysWeather == .wind {
+    print("Let's bring the kite with us")
+} else {
+    print("Something else")
+}
+{% endhighlight %}
+
+## Example with `switch-case`
+{% highlight swift %}
+enum Weather {
+    case sun, rain, wind, snow, unknown
+}
+
+let todaysWeather: Weather = .sun
+
+switch todaysWeather {
+case .sun:
+    print("Let's go to the park")
+case .rain, .snow:
+    print("Let's go to the mall")
+case .wind:
+    print("Let's bring the kite with us")
+default:
+    print("Something else")
+}
+{% endhighlight %}
+
+In addition to this simple example, the `switch-case` statement can be use with the pattern matching (we wrote an article about it for the Python programming language. [Check it out]({% post_url 2024-06-14-the-power-of-switch-case-in-python%})).
+
+Moreover, Swift has a `fallthrough` statement. When a `case` block ends with the `fallthrough` statement, the program will execute the following `case` even though the condition doesn't match.
+
+## Example with the ternary operator `... ? ... : ...`
+{% highlight swift %}
+let age = 18
+let canVote = age >= 18 ? true : false
+{% endhighlight %}
+
+You can read the ternary operator as `<condition> ? <value if condition is true> : <value if condition is false>`.
+
