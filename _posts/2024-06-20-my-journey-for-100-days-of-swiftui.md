@@ -77,7 +77,7 @@ Finally, another checkpoint/exercise is proposed. In this checkpoint you have to
 {% highlight swift %}
 let anArray: [String] = ["Apple", "Orange", "Apple", "Pear"]
 let aSetFromAnArray: Set<String> = Set(anArray)
-print("anArray has \(anArray.count) elmennts of which \(aSetFromAnArray.count) are unique")
+print("anArray has \(anArray.count) elements of which \(aSetFromAnArray.count) are unique")
 {% endhighlight %}
 
 # Day 5
@@ -134,3 +134,120 @@ let canVote = age >= 18 ? true : false
 
 You can read the ternary operator as `<condition> ? <value if condition is true> : <value if condition is false>`.
 
+# Day 6
+Now it's time of iteration. `for-in` loop, and `while` loop
+
+{% highlight swift%}
+let platforms = ["iOS", "macOS", "iPadOS", "tvOS", "watchOS"]
+
+for os in platforms {
+    print("Swift is grat on \(os).")
+}
+
+for i in 1...12 {
+    print("5 x \(i) = \(5*i)")
+}
+
+for i in 1...5 {
+    print("Counting from 1 through 5: \(i)")
+}
+
+for i in 1..<5 {
+    print("Counting from 1 up to 5: \(i)")
+}
+
+var lyrics = "Haters gonna "
+
+for _ in 1...5{
+    lyrics += "hate "
+}
+
+print(lyrics)
+{% endhighlight %}
+
+It is worh noting how ranges work in Swift: `[min]...[max (included)]` and `[min]..<[max (excluded)]`.
+
+`while` loops have nothing new with respect to other languages.
+{% highlight swift %}
+var roll = 0
+var times = 0
+
+while roll != 20 {
+    roll = Int.random(in: 1...20)
+    times += 1
+    print("I rolled \(roll)")
+}
+
+print("Crit! in \(times) roll")
+{% endhighlight %}
+
+Finally, `continue` and `break` statement:
+{% highlight swift %}
+let fileNames = ["A.jpg", "work.txt", "sophie.jpg"]
+
+for fileName in fileNames {
+    if fileName.hasSuffix(".jpg") == false {
+        continue
+    }
+    
+    print("Image file: \(fileName)")
+}
+
+let number1 = 4
+let number2 = 14
+var multiplies: [Int] = []
+
+for i in 1...100_000 {
+    if i.isMultiple(of: number1) && i.isMultiple(of: number2) {
+        multiplies.append(i)
+        
+        if multiplies.count == 10 {
+            break
+        }
+    }
+}
+
+print(multiplies)
+{% endhighlight %}
+
+In Swift we can also have labeled statement. In this way we can `break` an outside loop when cycling inside a nested one.
+
+{% highlight swift %}
+enum Controls {
+    case up, down, left, right
+}
+
+let options: [Controls] = [.up, .down, .left, .right]
+let secretCode: [Controls] = [.down, .up, .right]
+
+outerLoop: for option1 in options {
+    for option2 in options {
+        for option3 in options {
+            let attempt = [option1, option2, option3]
+            
+            if attempt == secretCode {
+                print("Found the secret code \(attempt)")
+                break outerLoop
+            }
+        }
+    }
+}
+
+{% endhighlight %}
+
+Today was also a checkpoint day. Now we know all the basic stuff to write any computer program.
+
+The solution for the fizz-buzz problem follows.
+{% highlight swift %}
+for i in 1...100 {
+    if i.isMultiple(of: 3) && i.isMultiple(of: 5) {
+        print("FizzBuzz")
+    } else if i.isMultiple(of: 3) {
+        print("Fizz")
+    } else if i.isMultiple(of: 5) {
+        print("Buzz")
+    } else {
+        print(i)
+    }
+}
+{% endhighlight %}
