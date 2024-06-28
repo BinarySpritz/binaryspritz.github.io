@@ -251,3 +251,89 @@ for i in 1...100 {
     }
 }
 {% endhighlight %}
+
+# Day 7
+With iterations done, we reached a turning point in studying Swift. Today we step up and start studying functions. 
+
+{% highlight swift %}
+func printTimesTables(number: Int, end: Int) {
+    for i in 1...end {
+        print("\(i) * \(number) is \(i*number)")
+    }
+}
+
+printTimesTables(number: 7, end: 20)
+{% endhighlight %}
+
+By default, Swift requires the names of the parameters when we call the function.
+
+Returning values is as in many other programming language: `return` keyword and the type returned in the function declaration (with `-> <Type>`).
+
+{% highlight swift %}
+import Cocoa
+
+func sameCharInStrings(stringA: String, stringB: String) -> Bool {
+    return stringA.sorted() == stringB.sorted()
+}
+
+print("home has the same chars of emoh? \(sameCharInStrings(stringA: "home", stringB: "emoh"))")
+{% endhighlight %}
+
+It is not true that the `return` keyword is always needed. When the return statement is the first line of the scope we can ommit the keyword.
+
+{% highlight swift %}
+func specialHello(to: String) -> String {
+    if to == "Tim" {
+        "Hello Mr. Tim"
+    } else {
+        let normalGreet = "Hello \(to)"
+        return normalGreet
+    }
+}
+{% endhighlight %}
+
+During this day, **tuples** are introduced as a way to return multiple values from a function:
+{% highlight swift %}
+func getUser() -> (firstName: String, lastName: String) {
+    return (firstName: "John", lastName: "Doe")
+}
+
+let user = getUser()
+print("Name: \(user.firstName) \(user.lastName)")
+{% endhighlight %}
+
+In Swift, tuples are like C's `struct` (they can only hold data) but defined in the return type. Moreover, you can also deconstruct a tuple into variables (we can use `_` to ignore some parts of the tuple).
+
+{% highlight swift %}
+func getUser() -> (firstName: String, lastName: String) {
+    return (firstName: "John", lastName: "Doe")
+}
+
+let (namePart1, namePart2) = getUser()
+print("Name: \(namePart1) \(namePart2)")
+{% endhighlight %}
+
+## Dive into function's parameters
+In Swift, it is interesting looking into how parameters are a first-class citizen when we talk about functions.
+
+First of all, they are integral part of the function name. It means we can have functions with the same name but different parameters' name.
+
+{% highlight swift %}
+func a(b: String) { }
+func a(c: String) { }
+{% endhighlight %}
+
+Then, we can have two names for a parameter: one used inside the function body and the other used in function call (which could be `_` to have nothing)
+
+{% highlight swift %}
+func specialHello(to name: String) -> String {
+    if name == "Tim" {
+        return "Hello Mr. Tim"
+    } else {
+        return "Hello \(name)"
+    }
+}
+
+print(specialHello(to: "Tim"))
+{% endhighlight %}
+
