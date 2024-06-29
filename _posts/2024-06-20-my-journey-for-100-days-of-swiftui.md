@@ -337,3 +337,72 @@ func specialHello(to name: String) -> String {
 print(specialHello(to: "Tim"))
 {% endhighlight %}
 
+# Day 8
+In Swift, we can also have default parameters. That is done adding the default value in the parameter declarationn  `func f(a: String = "default string") { }`.
+
+Functions can also throw exceptions and that must be added to the function definition with the `throws` keyword.
+
+{% highlight swift %}
+enum PasswordError: Error {
+    case short, obvious
+}
+
+func checkPassword(password: String) throws -> String{
+    if password.count < 8 {throw PasswordError.short}
+    if password == "password" {throw PasswordError.obvious}
+    
+    if password.count < 10 {
+        return "OK"
+    } else if password.count < 12 {
+        return "Good"
+    } else {
+        return "Great"
+    }
+}
+{% endhighlight %}
+
+To call a function which could throw an exception we have a couple of ways: `do-try-catch` block or `try!`.
+
+{% highlight swift %}
+do {
+    let passwordResult = try checkPassword(password: "1234567890")
+    print("The password is \(passwordResult)")
+} catch PasswordError.short {
+    print("You should use a longer password")
+} catch PasswordError.obvious {
+    print("Your password is 'password'")
+} catch {
+    print("Generic error: \(error)")
+}
+
+let passwordResult = try! checkPassword(password: "1234") // ! = danger. In this case it will crash the program
+print("The password is \(passwordResult)")
+{% endhighlight %}
+
+Finally, to test functions in a more real use case this day's checkpoint requires to find the integer square root of an integer number.
+
+{% highlight swift %}
+enum SqrtError: Error {
+    case outOfBound, noRoot
+}
+
+func sqrt(of number: Int) throws -> Int {
+    if number < 1 || number > 10_000 {throw SqrtError.outOfBound}
+    
+    for i in 1...100 {
+        if i*i == number { return i}
+    }
+    
+    throw SqrtError.noRoot
+}
+
+let number = 10000
+do {
+    let root = try sqrt(of: number)
+    print("sqaure root of \(number) is \(root)")
+} catch SqrtError.outOfBound {
+    print("Number must be grater than zero and lessere than 10_001")
+} catch SqrtError.noRoot {
+    print("No root has been found for \(number)")
+}
+{% endhighlight %}
