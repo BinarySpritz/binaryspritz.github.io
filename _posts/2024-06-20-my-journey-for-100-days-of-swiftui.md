@@ -495,3 +495,161 @@ luckyNumbers
     .map({"\($0) is lucky number"})
     .forEach({print("\($0) is a lucky number")})
 {% endhighlight %}
+
+# Day 10
+After functional, object-oriented programming joins the game.
+
+We start with `struct`s:
+
+{% highlight swift %}
+struct Album {
+    let title: String
+    let artist: String
+    let year: Int
+    
+    func printInfo()  {
+        print("\(title) (\(year) by \(artist)")
+    }
+}
+
+let red = Album(title: "Red", artist: "Taylor Swift", year: 2012)
+red.printInfo()
+{% endhighlight %}
+
+By defualt a struct instance is constant. It means you cannot change the value of its variables even if they are marked as `var`.
+
+{% highlight swift lineos %}
+struct Employee {
+    let name: String
+    var vacationRemaining: Int
+    
+    func takeVacation(days: Int) {
+        if vacationRemaining > days {
+            vacationRemaining -= days
+            print("You can go to vacation. \(vacationRemaining) days left")
+        }
+    }
+}
+{% endhighlight %}
+
+In the example above, when we do `vacationRemaining -= days`, the compiler will complain with the following error message: `Left side of mutating operator isn't mutable: 'self' is immutable`.
+
+To change this behaviour we have to explicitly mark the function as `mutating`.
+
+{% highlight swift lineos %}
+struct Employee {
+    let name: String
+    var vacationRemaining: Int
+    
+    mutating func takeVacation(days: Int) {
+        if vacationRemaining > days {
+            vacationRemaining -= days
+            print("You can go to vacation. \(vacationRemaining) days left")
+        }
+    }
+}
+{% endhighlight %}
+
+However, when we declare the variable holding our instance it changes if we declare it as `let` or as `var`.
+{% highlight swift %}
+struct Employee {
+    let name: String
+    var vacationRemaining: Int
+    
+    mutating func takeVacation(days: Int) {
+        if vacationRemaining > days {
+            vacationRemaining -= days
+            print("You can go to vacation. \(vacationRemaining) days left")
+        } else {
+            print("You don't have enough vacation days")
+        }
+    }
+}
+
+var john = Employee(name: "John", vacationRemaining: 10)
+john.takeVacation(days: 5)
+print(john.vacationRemaining)
+
+let mary = Employee(name: "Mary", vacationRemaining: 10)
+mary.takeVacation(days: 5)
+print(mary.vacationRemaining)
+{% endhighlight %}
+
+When we declare `let mary = ...` we cannot invoke any `mutating function`. We will get the following error: `Cannot use mutating member on immutable value: 'mary' is a 'let' constant`
+
+## Notes on properties
+
+### Computed property
+That is a fancy name for a `getter` and `setter`. For the setter the new value is hold by the automatic `newValue` parameter.
+ {% highlight swift %}
+struct Employee {
+    let name: String
+    var vacationAllocated: Int = 14
+    var vacationTaken = 0
+    
+    var vacationRemaining: Int {
+        get {
+            vacationAllocated - vacationTaken
+        }
+        set {
+            vacationAllocated = vacationTaken + newValue
+        }
+    }
+}
+
+var john = Employee(name: "John")
+john.vacationTaken += 4
+print("\(john.name) has \(john.vacationRemaining) days of vacation")
+
+john.vacationRemaining = 10
+print(print("\(john.name) has a total of \(john.vacationAllocated) days of vacation"))
+{% endhighlight %}
+
+It is worth notice that, computed properties can only be `var`.
+
+### Observed property
+In addition to `getter` and `setter` we have also `didSet` and `willSet` to observe how a variable is changed or is goining to change.
+
+{% highlight swift %}
+struct Game {
+    var score = 0 {
+        didSet {
+            print("Someone just scored. Now it is \(score), before was \(oldValue)")
+        }
+    }
+    
+    var player: [String] = [] {
+        willSet {
+            print("List of player is going to change. The list of player will change from \(player) to \(newValue)")
+        }
+    }
+}
+
+var game = Game()
+game.player = ["John", "Tim"]
+game.score += 1
+game.player = game.player + ["Craig"]
+game.score += 1
+{% endhighlight %}
+
+## Initializer
+Finally, let's talk about how to initialize our structs.
+
+By defualt we have a generated initializer which takes in input all the properties of our struct.
+
+{% highlight swift %}
+struct Player {
+    let name: String
+    let number: Int
+    
+    init(name: String) {
+        self.name = name
+        self.number = Int.random(in: 1...99)
+    }
+}
+
+var player = Player(name: "John")
+print("\(player.name) is number \(player.number)")
+{% endhighlight %}
+
+Before calling any struct's method inside the initializer we have to initialize every property.
