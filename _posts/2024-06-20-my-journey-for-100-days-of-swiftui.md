@@ -406,3 +406,92 @@ do {
     print("No root has been found for \(number)")
 }
 {% endhighlight %}
+
+# Day 9
+After functions, it is time to go functional!
+
+A function can be assigned to a variable and called from that variable. That is usefull when you want to let the user define a behaviour to call later.
+
+{% highlight swift %}
+func a() {
+    print("Hello from a")
+}
+
+var aCaller = a
+aCaller()
+
+let bCaller = {
+    print("Hello from b")
+}
+bCaller()
+{% endhighlight %}
+
+In the example, `bCaller` is called **closure** (a.k.a anonymous function).
+
+To accept some values as input and return, we have to specify it in the closure with `{(<parameter list>) -> <returnType> in } (which is also the type of the function)`.
+{% highlight swift %}
+let sayHello: (String) -> String = { (name: String) -> String in 
+    return "Hi \(name)"
+}
+
+let message = sayHello("John")
+{% endhighlight %}
+
+In a closure, we can avoid using parameters name and use `$0`, `$1`, `$2`, `...` and inline the function definition (having an anonymous function) instead. That is called **trailing closure syntax**.
+
+{% highlight swift %}
+let alphabet = ["B", "D", "X", "A", "F"]
+
+let reverseSorted = alphabet.sorted {
+    return $0 > $1
+}
+
+let onlyA = alphabet.filter { $0.hasPrefix("A") }
+{% endhighlight %}
+
+Obviously, function can be accepted as parameter by other functions (we can say that is what functional means).
+
+{% highlight swift %}
+func makeArray(size: Int, using generator: () -> Int) -> [Int] {
+    var numbers: [Int] = []
+    for _ in 0..<size {
+        let newNumber = generator()
+        numbers.append(newNumber)
+    }
+    return numbers
+}
+
+let intArry = makeArray(size: 10) {
+    Int.random(in: 1...20)
+}
+{% endhighlight %}
+
+One thing I am not really happy with is how are handled multiple closure as parameters
+
+{% highlight swift %}
+func a(first: () -> Void, second: () -> Void, third: () -> Void) {
+    first()
+    second()
+    third()
+}
+
+a {
+    print("First")
+} second: {
+    print("Second")
+} third: {
+    print("Third")
+}
+{% endhighlight %}
+
+Finally, as checkpoint, here it is a program that exploits the power of closures.
+
+{% highlight swift %}
+let luckyNumbers = [7, 4, 38, 21, 16, 15, 12, 33, 31, 49]
+
+luckyNumbers
+    .filter({$0.isMultiple(of: 2)})
+    .sorted()
+    .map({"\($0) is lucky number"})
+    .forEach({print("\($0) is a lucky number")})
+{% endhighlight %}
