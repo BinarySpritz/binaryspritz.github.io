@@ -9,6 +9,20 @@ In this blog post, I will log my journey in learning Swift and SwiftUI by follow
 
 There are two reasons for this diary to exist and be publicly available: first, to share my thoughts about the language and the framework, and second, as a review of the learning process proposed by "The 100 Days of Swift," which, as the title says, you have to follow for one hundred days. Moreover, as I am a person who already knows some programming languages, I was curious about how a new language is taught.
 
+Index:
+- [Day 1](#day-1): variables and constants part 1/2
+- [Day 2](#day-2): variables and constants part 2/2 and string interpolation
+- [Day 3](#day-3): arrays, dictionaries, enums, 
+- [Day 4](#day-4): typing
+- [Day 5](#day-5): conditional statements
+- [Day 6](#day-6): loops
+- [Day 7](#day-7): functions part 1/2
+- [Day 8](#day-8): functions part 2/2 
+- [Day 9](#day-9): functional programming
+- [Day 10](#day-10): struct part 1/2
+- [Day 11](#day-11): struct part 2/2
+
+
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
 
