@@ -653,3 +653,98 @@ print("\(player.name) is number \(player.number)")
 {% endhighlight %}
 
 Before calling any struct's method inside the initializer we have to initialize every property.
+
+# Day 11
+
+## Access modifier
+By defualt the access to struct's members are `public`. There are other two access modifier:
+- `private`: only by struct
+- `fileprivate`: only in the same file
+
+We can go further and use `private` and `fileprivate` also by setter.
+- `private(set) var ...`
+
+An interesting point is that Swift cannot generate the initializer when we have a mix of private and public attributes.
+
+{% highlight swift %}
+struct A {
+    private var a = "a string"
+}
+
+let a = A() // OK
+
+struct B {
+    private var b = "b string"
+    var c: String 
+}
+
+let b = B(c: "c string") // !Error: initializer is inaccessible due to 'private' protection level
+{% endhighlight %}
+
+## Static members
+We can declare `static` members for our structs.
+
+{% highlight swift %}
+struct A {
+    static var a = 0
+
+    static func f(s: String) {
+        print(s)
+        a += 1
+    }
+}
+
+A.f(s: "a string")
+print(A.a)
+{% endhighlight %}
+
+In a static method we can access to "`self`" through the keyword `Self` (note the capital `S`).
+
+## Checkpoint
+Today has been also a checkpoint day.
+
+Today's task was to define a struct for a car which can change gear.
+
+{% highlight swift %}
+enum GearMovement {
+    case UP, DOWN
+}
+
+enum GearException: Error{
+    case NO_UP, NO_DOWN
+}
+
+struct Car {
+    let model: String
+    let seats: Int
+    private(set) var currentGear: Int = 0
+    
+    init(model: String, seats: Int) {
+        self.model = model
+        self.seats = seats
+    }
+    
+    mutating func changeGear(_ move: GearMovement) throws {
+        if currentGear == 10 && move == .UP {throw GearException.NO_UP}
+        if currentGear == 0 && move == .DOWN {throw GearException.NO_DOWN}
+        
+        
+        switch move {
+        case .UP:
+            currentGear += 1
+        default:
+            currentGear -= 1
+        }
+    }
+}
+
+
+var myCar = Car(model: "MIa", seats: 5)
+
+do {
+    try myCar.changeGear(.UP)
+    print("Now you are in \(myCar.currentGear)")
+} catch {
+    print("Error: \(error)")
+}
+{% endhighlight %}
