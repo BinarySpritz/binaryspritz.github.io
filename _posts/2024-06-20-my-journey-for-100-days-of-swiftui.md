@@ -21,6 +21,7 @@ Index:
 - [Day 9](#day-9): functional programming
 - [Day 10](#day-10): struct part 1/2
 - [Day 11](#day-11): struct part 2/2
+- [Day 12](#day-12): classes
 
 
 # Day 1
@@ -761,4 +762,181 @@ do {
 } catch {
     print("Error: \(error)")
 }
+{% endhighlight %}
+
+# Day 12
+Structs can hold data and perform operations through functions but OOP is much more. For this reason we need classes.
+
+In addition to structs, classes are defined by:
+1. Inheritance
+2. Not having an auto-generated initializer
+3. Copying an instance of a class means copying its reference
+4. De-initializers
+5. The possibility to change properties of an object declared as constant
+
+## Copy means shallow copy
+
+{% highlight swift %}
+class Game {
+    var score = 0 {
+        didSet {
+            print("Score is now \(score)")
+        }
+    }
+}
+
+var newGame = Game()
+newGame.score += 1 // score = 1
+
+var anotherGame = newGame
+anotherGame.score += 1 // score = 2
+
+newGame.score += 1 // score = 3
+{% endhighlight %}
+
+We have to implement our own `deepCopy` function to overcome this. 
+
+## Inheritance
+Regarding inheritance, Swift works as many other programming languages.
+
+{% highlight swift %}
+class ParentClass {
+    func work() {
+        print("work from ParentClass")
+    }
+}
+
+final class ChildClass: ParentClass {
+    override func work() {
+        super.work()
+        print("And then work from ChildClass")
+    }
+}
+{% endhighlight %}
+
+## Initializer
+Initializers are a bit more complicated than struct's initializers because inheritance could be in between.
+
+{% highlight swift %}
+class ParentClass {
+    var a: Int
+    
+    init(a: Int) {
+        self.a = a
+    }
+}
+
+final class ChildClass: ParentClass {
+    var b: Int
+    
+    init(a: Int, b: Int) {
+        self.b = b
+        super.init(a: a)
+    }
+}
+{% endhighlight %}
+It is worth noticing that in `ChildClass`'s initializer we must initialize its own attributes before calling `ParentClass` initializer.
+
+## De-initializer
+We can define the behaviour when an object is destroyed. In Swfift we don't have to manage the memory (no `new` and `delete` keyword). So, an object is destroyed when the last variable, pointing to it, is unreachable (out of scope (`{...}`)). Swift uses **Automatic Reference Counting (ARC)** to keep trace of which objects are still reachable by some variable.
+
+{% highlight swift %}
+class A {
+    var a: Int
+    
+    init(a: Int) {
+        print("Init an object of type A")
+        self.a = a
+    }
+    
+    deinit {
+        print("Destroyed an object of type A")
+    }
+}
+
+func main() {
+    var a = A(a:0)
+    
+    for i in 1...5 {
+        var copyOfA = a
+        copyOfA.a += 1
+        print("a's new value is \(copyOfA.a)")
+    }
+}
+
+main()
+{% endhighlight %}
+
+## Variables or constants?
+When we declare a constant object (`let a = A(a: 0)`) we are saying that `a` will point to that area of memory and cannot be changed (`a = A(a: 1)`). The area of memory holding the object is not constant and can be changed (if properties are declared as `var` and not as `let`).
+
+This brings another difference from structs. Classes don't have the `mutating` keyword for functions.
+
+## Checkpoint 
+Classes can be challenging. To be sure to have understood how they work an exercise is proposed: a class hierarchy for animals.
+
+{% highlight swift %}
+class Animal {
+    let legs: Int
+    
+    init(legs: Int) {
+        self.legs = legs
+    }
+}
+
+class Dog: Animal {
+    init() {
+        super.init(legs: 4)
+    }
+    
+    func speak() {
+        print("Bau")
+    }
+}
+
+class Corgi: Dog {
+    override func speak() {
+        print("Bau but in corgi dialect")
+    }
+}
+
+class Poodle: Dog {
+    override func speak() {
+        print("Bau but in poddfle dialect")
+    }
+}
+
+class Cat: Animal {
+    var isTame: Bool
+    
+    init(isTame: Bool) {
+        self.isTame = isTame
+        super.init(legs: 4)
+    }
+    
+    func speak() {
+        print("Mio")
+    }
+}
+
+class Persian: Cat {
+    init() {
+        super.init(isTame: true)
+    }
+    
+    override func speak() {
+        print("Miao but in persian dialect")
+    }
+}
+
+class Lion: Cat {
+    init() {
+        super.init(isTame: false)
+    }
+    
+    override func speak() {
+        print("Miao but in lion dialect (a.k.a. roar)")
+    }
+}
+
 {% endhighlight %}
