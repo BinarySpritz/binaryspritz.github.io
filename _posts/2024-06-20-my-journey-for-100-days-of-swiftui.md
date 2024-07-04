@@ -22,6 +22,7 @@ Index:
 - [Day 10](#day-10): struct part 1/2
 - [Day 11](#day-11): struct part 2/2
 - [Day 12](#day-12): classes
+- [Day 13](#day-13): protocols and extensions
 
 
 # Day 1
@@ -938,5 +939,141 @@ class Lion: Cat {
         print("Miao but in lion dialect (a.k.a. roar)")
     }
 }
+{% endhighlight %}
 
+# Day 13
+
+## Protocols
+Next and last step in OOP is learning interfaces (Swift calls them `protocols`).
+
+Protocols can require also to declare variables. For each one you have to declare if they are only readable `{get}` or readable and writable `{get set}`
+
+{% highlight swift %}
+protocol Moving {
+    var speed: Int { get }
+    func estimateTime(for distance: Int) -> Int
+    func travel(distance: Int)
+}
+
+class Car: Moving {
+    var speed: Int = 50
+    
+    var travelledKm = 0
+    
+    func estimateTime(for distance: Int) -> Int {
+        return distance / speed
+    }
+    
+    func travel(distance: Int) {
+        travelledKm += distance
+    }
+}
+
+class Feet: Moving {
+    var speed: Int = 5
+    var hurt = false
+    
+    func estimateTime(for distance: Int) -> Int {
+        return distance / speed
+    }
+    
+    func travel(distance: Int) {
+        if distance > 100 {hurt = true}
+    }
+
+}
+
+func commute(distance: Int, using tool: Moving) {
+    tool.travel(distance: distance)
+}
+{% endhighlight %}
+
+## Opaque return types
+Sometimes we cannot tell to the compiler what type we are returning from a function because it will complain, maybe, without reason.
+
+{% highlight swift %}
+func getRandomNumber() -> Equatable {
+    return Int.random(in: 1...6)
+}
+
+func getRandomBool() -> Equatable {
+    return Bool.random()
+}
+
+print(getRandomNumber() == getRandomNumber())
+{% endhighlight %}
+
+The solution is telling Swift that we return `some` of that type
+
+{% highlight swift %}
+func getRandomNumber() -> some Equatable {
+    return Int.random(in: 1...6)
+}
+
+func getRandomBool() -> some Equatable {
+    return Bool.random()
+}
+
+print(getRandomNumber() == getRandomNumber())
+{% endhighlight %}
+
+The `some` keyword let the compiler to know the real type reuturned but from our perspective it is only an `equatable`.
+
+The `some` keyword can be read as: "we are returning a specific type of `equatable` but we are not saying which one".
+
+SwiftUI uses this feature a lot.
+
+## Extensions
+With extensions we can add function(alities) to any type. 
+
+{% highlight swift %}
+extension String {
+    func toStrangeFormat() -> String {
+        var newString = ""
+        for (i, c) in self.enumerated() {
+            newString += i.isMultiple(of: 2) ? String(c) : c.uppercased()
+        }
+        return newString
+    }
+}
+
+let myNormalString = "A normal string".toStrangeFormat()
+print(myNormalString) // A nOrMaL StRiNg
+{% endhighlight %}
+
+Moreover, if we implement a custom initializer for a struct inside an extension, Swift will keep the default initializer and of our custom one.
+
+We can extend protocols as well. In this case we can specify implementation for functions in protocols accessible everywhere. In the example before, we can specify the method `estimateTime` as an extension of the protocol `Moving` in order to provide the default implementation `return distance / speed`.
+
+## Checkpoint
+Also today has been a checkpoint-day. The challenge was about modelling a protocol for a building and implementing it for two structs.
+
+{% highlight swift %}
+protocol Building {
+    var rooms: Int {get}
+    var cost: Int {get set}
+    var seller: String {get}
+    
+    func printSummary()
+}
+
+struct House: Building {
+    var rooms: Int
+    var cost: Int
+    var seller: String
+    
+    func printSummary() {
+        print("This house is selled by \(seller). It has \(rooms) rooms and it costs \(cost)$")
+    }
+}
+
+struct Office: Building {
+    var rooms: Int
+    var cost: Int
+    var seller: String
+    
+    func printSummary() {
+        print("This office is selled by \(seller). It has \(rooms) rooms and it costs \(cost)$")
+    }
+}
 {% endhighlight %}
