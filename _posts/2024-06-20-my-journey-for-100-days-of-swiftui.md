@@ -23,6 +23,7 @@ Index:
 - [Day 11](#day-11): struct part 2/2
 - [Day 12](#day-12): classes
 - [Day 13](#day-13): protocols and extensions
+- [Day 14](#day-14): optionals
 
 
 # Day 1
@@ -1077,3 +1078,90 @@ struct Office: Building {
     }
 }
 {% endhighlight %}
+
+# Day 14
+Last topic about the Swift programming language: the optional type. In Swift, we can mark any type as an optional type, which means that the variable holding that type could be an instance of the type or `nil` (`null`, `None`, or `nullptr` in other languages).
+
+In Swift, to say that a type can be `nil` we specify it in the type specification with a question mark: `Type?`.
+
+## Unwrapping optional values
+We have a couple of solutions to unwrap optional values:
+
+### if-let
+{% highlight swift %}
+var maybeString: String? = nil
+
+if let maybeString = maybeString { // Shadowing
+    print("I'm sure maybeString is not nil and its value is \(maybeString)")
+} else {
+    print("maybeString is nil. Nothing to show")
+}
+{% endhighlight %}
+
+### guard-let
+{% highlight swift %}
+func doSomething(a: String?) {
+    guard let a = a else {
+        print("a was nil. Returning")
+        return
+    }
+
+    print("Here I'm sure 'a' is not nil: \(a)")
+}
+{% endhighlight %}
+
+### Nil coalescing
+Also known as: default value. It is achieved adding a doubble question mark `??` after the use of the optional value. 
+
+{% highlight swift %}
+let map = [
+    1: "A",
+    2: "B",
+    3: "C"
+]
+
+let missing = map[4] ?? "N/A"
+{% endhighlight %}
+
+It is worth noticing that you can chain default values: `let a = f1() ?? f2 ?? "default"`.
+
+## Optional chaining
+We can use optional inside optionals.
+
+{% highlight swift %}
+let a = ["a", "b", "c", "d"]
+let chosen = a.randomElement?.uppercased() ?? "No one"
+{% endhighlight %}
+
+You can read it as: "unwrap the value and continue the processing. If any step fails unwrapping, then fallback to the default value".
+
+## Optional instead of exception
+We can catch an exception and return a `nil` instead of handling the exception. To do so, we can use `try?` before calling the throwing function.
+
+{% highlight swift %}
+enum UserError: Error {
+    case badId, networkFailed
+}
+
+func getUser(id: Int) throws -> String {
+    throw UserError.networkFailed
+}
+
+if let user = try? getUser(id: 42) {
+    print("User: \(user)")
+}
+
+let user = (try? getUser(id: 42)) ?? "Anonymous"
+{% endhighlight %}
+
+We can also let the program crash. When we use `try! f()` the program will crash if any exception is thrown in the function called after the `try!`
+
+## Checkpoint
+Also today was a checkpoint-day. The challenge was about coding a function that handles optional values in a single line of code.
+
+{% highlight swift %}
+func f(a: [Int]?) -> Int{
+    return a?.randomElement() ?? Int.random(in: 1...100)
+}
+{% endhighlight %}
+
