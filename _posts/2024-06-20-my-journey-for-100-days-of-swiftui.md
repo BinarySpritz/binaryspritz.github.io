@@ -24,6 +24,7 @@ Index:
 - [Day 12](#day-12): classes
 - [Day 13](#day-13): protocols and extensions
 - [Day 14](#day-14): optionals
+- [Day 15](#day-15): Swift recap
 
 
 # Day 1
@@ -1165,3 +1166,5 @@ func f(a: [Int]?) -> Int{
 }
 {% endhighlight %}
 
+# Day 15
+Today has been dedicated to a recap of the foundamentals learnt so far. Nothing new has been added. From tomorrow we move into SwiftUI and app development.
