@@ -25,6 +25,8 @@ Index:
 - [Day 13](#day-13): protocols and extensions
 - [Day 14](#day-14): optionals
 - [Day 15](#day-15): Swift recap
+- [Day 16](#day-16): WeSplit part 1
+- [Day 17](#day-17): WeSplit part 2
 
 
 # Day 1
@@ -1168,3 +1170,469 @@ func f(a: [Int]?) -> Int{
 
 # Day 15
 Today has been dedicated to a recap of the foundamentals learnt so far. Nothing new has been added. From tomorrow we move into SwiftUI and app development.
+
+# Day 16
+Today we start iOS app development with a running example. WeSplit is an app that allows to split the cost of a launch or a dinner among people.
+
+## Structure of a SwiftUI app
+When we create a new iOS app in XCode, the IDE will genereate a couple of file for us.
+
+The `main` file is the file with the name of our app. It will contain the following code
+
+{% highlight swift %}
+import SwiftUI
+
+@main
+struct WeSplitApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+{% endhighlight %}
+
+This struct will live for the whole time our app will run.
+
+The interface is handled by `ContentView`
+
+{% highlight swift %}
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            Image(systemName: "globe")
+                .imageScale(.large)
+                .foregroundStyle(.tint)
+            Text("Hello, world!")
+        }
+        .padding()
+    }
+}
+
+#Preview {
+    ContentView()
+}
+{% endhighlight %}
+
+For now everything will be managed by `ContentView`. At a first glance we can already see a lot of stuff we have already see in the last days.
+
+We have:
+- a `struct` representing our view which implemnts the `View` protocol
+- a computed property called `body` of type `some View`
+
+Then we have new stuff:
+- a `VStack`
+- an `Image`
+- a `Text`
+- a call to the `padding()` method
+
+Last thing is the `#Preview` statement which initialize an object of type `ContentView` which will be showed in XCode without running our app. This feature is called **canvas**.
+
+## Form
+A `Form` is a graphical element which can be used as container for other elements (usually, for data input from the user). We can separate sections of the forms, grouping them inside a `Grouping` object.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    Form {
+        Section {
+            Text("Hello World0")
+            Text("Hello World1")
+        }
+        
+        Section {
+            Text("Hello World2")
+            Text("Hello World3")
+        }
+    }
+}
+    {% endhighlight %}</td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/formWithSections.png" alt="Form with sections rendered in the canvas"/></td>
+    </tr>
+</table>
+
+## Navigation bar
+Container which allow the navigation between views. We surround our Form with a `NavigationStack` and add some properties to it applying them to the form.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+        NavigationStack{
+            Form {
+                Section {
+                    Text("Hello World0")
+                    Text("Hello World1")
+                }
+                
+                Section {
+                    Text("Hello World2")
+                    Text("Hello World3")
+                }
+            }
+            .navigationTitle("SwiftUI")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    {% endhighlight %}</td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/formWithSectionsAndNavigation.png" alt="Form with sections and a navigationbar rendered in the canvas"/></td>
+    </tr>
+</table>
+
+## App state
+What a view presents depends on its state.
+
+In Swift, structs cannot change the value of their variables outsie `mutating` func so we **cannot** have something like this:
+
+{% highlight swift %}
+struct ContentView: View {
+    var tapCount = 0
+    
+    var body: some View {
+        Button("Tap count: \(tapCount)") {
+           tapCount += 1
+        }
+    }
+}
+{% endhighlight %}
+
+The solution is using a **property wrapper** for our varibale called `State`.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var tapCount = 0
+    
+    var body: some View {
+        Button("Tap count: \(tapCount)") {
+           tapCount += 1
+        }
+    }
+}
+{% endhighlight %}
+
+### Binding
+We want our user interface being able to change the state of our app. When we write a string as input of a `TextField` we can link it to a `@State` variable but that is not enough. We have to tell to SwiftUI that we are binding that state to the graphical element which will change. To do so, we pass `$varName` instead of `varName`
+
+The dollar sign means: be able to read and **change** the value in the state variable.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var name = ""
+    
+    var body: some View {
+        Form {
+            TextField("Enter your name", text: $name)
+            Text("Hello \(name)!")
+        }
+    }
+}
+{% endhighlight %}
+
+## Loops
+We can create views in a loop (maybe one for each iteration). 
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var name = ""
+    
+    var body: some View {
+        Form {
+            ForEach(0..<100) { number in
+                Text("Row \(number)")
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+We can use it in a `PickerView` to select an element from a list.
+
+{% highlight swift %}
+struct ContentView: View {
+    let students = ["John", "Mark", "Tim", "Steve"]
+    @State private var name = ""
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Picker("Select your student", selection: $name) {
+                    ForEach(students, id: \.self) {
+                        Text($0)
+                    }
+                }
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+We can see things are becoming complex:
+1. We define a `NavigationStack`
+2. Inseide the `NavigationStack` we insert a `Form`
+3. Insider our `Form` we insert a `Picker` which has:
+    - a label ("Select your student")
+    - a varibale where store the selction (`$name`)
+    - a list of views (`Text`) which represent the possible selections. This list is generated with a `ForEach` "loop"
+        - we iterate over `students`
+        - we tell to the `ForEach` how to uniquely identify each element (`id` parameter (we use `\.self` which means each string))
+        - we create the view `Text` with text the first element of the closure (the string itself)
+
+# Day 17
+Let's start developing our WeSplit application. First of all we need three state variable: `checkAmount`, `numberOfPeople`, and `tipPercentage`. Then we need an array of possible tip percentages. This is not a state variable because it will not change.
+
+Finally, we declare the `body` computed variable which will be computed every time a state variable changes.
+
+## First iteration
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+struct ContentView: View {
+    @State private var checkAmount = 0.0
+    @State private var numberOfPeople = 2
+    @State private var tipPercentage = 20
+    
+    let tipPercenteges = [10, 15, 20, 25, 0]
+    
+    var body: some View {
+        Form {
+            Section {
+                TextField("Amount", 
+                            value: $checkAmount, 
+                            format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                    .keyboardType(.decimalPad)
+            }
+            
+            Section {
+                Text(checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            }
+        }
+    }
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV1.png" alt="First implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/></td>
+    </tr>
+</table>
+
+A new element is the access to some `Locale` value. It holds the identifier for the current currency ("EUR" in my case). It is handled with nil coalescing and a default in case of errors.
+
+Another addition is the definition of the `keyboardType` to the `TextField` object.
+
+## Second iteration 
+Next step is adding a picker for the number of people eating at out table.
+
+We start declaring a `Picker` which will be binded to the `numberOfPeople` variable and will show `# of people` as text. In addition we can change how the view to select is shown. Adding a `NavigationStack` around our `Form` we can set the `pickerStyle` to `.navigationLink` to show a new "window".
+
+<table>
+    <tr>
+        <td rowspan="2">
+{% highlight swift %}
+struct ContentView: View {
+    @State private var checkAmount = 0.0
+    @State private var numberOfPeople = 2
+    @State private var tipPercentage = 20
+    
+    let tipPercenteges = [10, 15, 20, 25, 0]
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Amount", value: $checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .keyboardType(.decimalPad)
+                    
+                    Picker("Number of people", selection: $numberOfPeople) {
+                        ForEach(2..<100) {
+                            Text("\($0) people")
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+                
+                Section {
+                    Text(checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                }
+            }
+            .navigationTitle("WeSplit")
+        }
+    }
+}
+{% endhighlight %}
+        </td>
+        <td>
+            <img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2b.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/>
+        </td>
+    </tr>
+</table>
+
+## Third iteration
+Then, we define our graphical element to input the tip percentage. We use again a `Picker` with the `pickerStyle` as `.segmented`. Moreover, we add a header text for the section holding this new picker to tell the users what they have to do  
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+struct ContentView: View {
+    @State private var checkAmount = 0.0
+    @State private var numberOfPeople = 2
+    @State private var tipPercentage = 20
+    
+    let tipPercenteges = [10, 15, 20, 25, 0]
+    
+    var body: some View {
+        Form {
+            Section {
+                TextField("Amount", 
+                            value: $checkAmount, 
+                            format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                    .keyboardType(.decimalPad)
+            }
+            
+            Section {
+                Text(checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+            }
+        }
+    }
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV3.png" alt="Third implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/></td>
+    </tr>
+</table>
+
+## Fourth iteration
+Finally, we compute the total per person. We create a new computer varible and inside it we add the computation which result will be shown in the last `Text`
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+struct ContentView: View {
+    @State private var checkAmount = 0.0
+    @State private var numberOfPeople = 2
+    @State private var tipPercentage = 20
+    
+    let tipPercenteges = [10, 15, 20, 25, 0]
+    
+    private var totalPerPerson: Double {
+        let peopleCount = Double(numberOfPeople + 2)
+        let tipSelection = Double(tipPercentage)
+        let tipValue = checkAmount / 100 * tipSelection
+        let grandTotal = checkAmount + tipValue
+        let amountPerPerson = grandTotal / peopleCount
+        
+        return amountPerPerson
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Amount", value: $checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .keyboardType(.decimalPad)
+                    
+                    Picker("Number of people", selection: $numberOfPeople) {
+                        ForEach(2..<100) {
+                            Text("\($0) people")
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                    
+                }
+                
+                Section("How much do you want to tip") {
+                    Picker("Tip percentage", selection: $tipPercentage) {
+                        ForEach(tipPercenteges, id: \.self) {
+                            Text($0, format: .percent)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                
+                Section {
+                    Text(totalPerPerson, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                }
+            }
+            .navigationTitle("WeSplit")
+        }
+    }
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV4.png" alt="Fourth implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/></td>
+    </tr>
+</table>
+
+## Fifth iteration
+Let's fix the "bug" of the keyboard not disapearing after we edited the check amount.
+
+We add a boolean variable `amountIsFocues` and we mark it as `FocusState`. Then, we bind this variable to the `focused` property of the `TextField` which allows the user to input the amount. Finally, we add a `toolbar` to our `Form` (which will be showed in the `NavigationStack`) with a button to toggle the focus.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var checkAmount = 0.0
+    @State private var numberOfPeople = 2
+    @State private var tipPercentage = 20
+    @FocusState private var amountIsFocused: Bool
+    
+    let tipPercenteges = [10, 15, 20, 25, 0]
+    
+    private var totalPerPerson: Double {
+        let peopleCount = Double(numberOfPeople + 2)
+        let tipSelection = Double(tipPercentage)
+        let tipValue = checkAmount / 100 * tipSelection
+        let grandTotal = checkAmount + tipValue
+        let amountPerPerson = grandTotal / peopleCount
+        
+        return amountPerPerson
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Amount", value: $checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .keyboardType(.decimalPad)
+                        .focused($amountIsFocused)
+                    
+                    Picker("Number of people", selection: $numberOfPeople) {
+                        ForEach(2..<100) {
+                            Text("\($0) people")
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                    
+                }
+                
+                Section("How much do you want to tip") {
+                    Picker("Tip percentage", selection: $tipPercentage) {
+                        ForEach(tipPercenteges, id: \.self) {
+                            Text($0, format: .percent)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                
+                Section {
+                    Text(totalPerPerson, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                }
+            }
+            .navigationTitle("WeSplit")
+            .toolbar {
+                if amountIsFocused {
+                    Button("Done") {
+                        amountIsFocused = false
+                    }
+                }
+            }
+        }
+    }
+}
+{% endhighlight %}
