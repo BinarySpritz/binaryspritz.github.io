@@ -25,6 +25,7 @@ Index:
 - [Day 13](#day-13): protocols and extensions
 - [Day 14](#day-14): optionals
 - [Day 15](#day-15): Swift recap
+- [Day 16](#day-16): WeSplit part 1
 
 
 # Day 1
@@ -1168,3 +1169,212 @@ func f(a: [Int]?) -> Int{
 
 # Day 15
 Today has been dedicated to a recap of the foundamentals learnt so far. Nothing new has been added. From tomorrow we move into SwiftUI and app development.
+
+# Day 16
+Today we start iOS app development with a running example. WeSplit is an app that allows to split the cost of a launch or a dinner among people.
+
+## Structure of a SwiftUI app
+When we create a new iOS app in XCode, the IDE will genereate a couple of file for us.
+
+The `main` file is the file with the name of our app. It will contain the following code
+
+{% highlight swift %}
+import SwiftUI
+
+@main
+struct WeSplitApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+{% endhighlight %}
+
+This struct will live for the whole time our app will run.
+
+The interface is handled by `ContentView`
+
+{% highlight swift %}
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            Image(systemName: "globe")
+                .imageScale(.large)
+                .foregroundStyle(.tint)
+            Text("Hello, world!")
+        }
+        .padding()
+    }
+}
+
+#Preview {
+    ContentView()
+}
+{% endhighlight %}
+
+For now everything will be managed by `ContentView`. At a first glance we can already see a lot of stuff we have already see in the last days.
+
+We have:
+- a `struct` representing our view which implemnts the `View` protocol
+- a computed property called `body` of type `some View`
+
+Then we have new stuff:
+- a `VStack`
+- an `Image`
+- a `Text`
+- a call to the `padding()` method
+
+Last thing is the `#Preview` statement which initialize an object of type `ContentView` which will be showed in XCode without running our app. This feature is called **canvas**.
+
+## Form
+A `Form` is a graphical element which can be used as container for other elements (usually, for data input from the user). We can separate sections of the forms, grouping them inside a `Grouping` object.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    Form {
+        Section {
+            Text("Hello World0")
+            Text("Hello World1")
+        }
+        
+        Section {
+            Text("Hello World2")
+            Text("Hello World3")
+        }
+    }
+}
+    {% endhighlight %}</td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/formWithSections.png" alt="Form with sections rendered in the canvas"></td>
+    </tr>
+</table>
+
+## Navigation bar
+Container which allow the navigation between views. We surround our Form with a `NavigationStack` and add some properties to it applying them to the form.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+        NavigationStack{
+            Form {
+                Section {
+                    Text("Hello World0")
+                    Text("Hello World1")
+                }
+                
+                Section {
+                    Text("Hello World2")
+                    Text("Hello World3")
+                }
+            }
+            .navigationTitle("SwiftUI")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    {% endhighlight %}</td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/formWithSectionsAndNavigation.png" alt="Form with sections and a navigationbar rendered in the canvas"></td>
+    </tr>
+</table>
+
+## App state
+What a view presents depends on its state.
+
+In Swift, structs cannot change the value of their variables outsie `mutating` func so we **cannot** have something like this:
+
+{% highlight swift %}
+struct ContentView: View {
+    var tapCount = 0
+    
+    var body: some View {
+        Button("Tap count: \(tapCount)") {
+           tapCount += 1
+        }
+    }
+}
+{% endhighlight %}
+
+The solution is using a **property wrapper** for our varibale called `State`.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var tapCount = 0
+    
+    var body: some View {
+        Button("Tap count: \(tapCount)") {
+           tapCount += 1
+        }
+    }
+}
+{% endhighlight %}
+
+### Binding
+We want our user interface being able to change the state of our app. When we write a string as input of a `TextField` we can link it to a `@State` variable but that is not enough. We have to tell to SwiftUI that we are binding that state to the graphical element which will change. To do so, we pass `$varName` instead of `varName`
+
+The dollar sign means: be able to read and **change** the value in the state variable.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var name = ""
+    
+    var body: some View {
+        Form {
+            TextField("Enter your name", text: $name)
+            Text("Hello \(name)!")
+        }
+    }
+}
+{% endhighlight %}
+
+## Loops
+We can create views in a loop (maybe one for each iteration). 
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var name = ""
+    
+    var body: some View {
+        Form {
+            ForEach(0..<100) { number in
+                Text("Row \(number)")
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+We can use it in a `PickerView` to select an element from a list.
+
+{% highlight swift %}
+struct ContentView: View {
+    let students = ["John", "Mark", "Tim", "Steve"]
+    @State private var name = ""
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Picker("Select your student", selection: $name) {
+                    ForEach(students, id: \.self) {
+                        Text($0)
+                    }
+                }
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+We can see things are becoming complex:
+1. We define a `NavigationStack`
+2. Inseide the `NavigationStack` we insert a `Form`
+3. Insider our `Form` we insert a `Picker` which has:
+    - a label ("Select your student")
+    - a varibale where store the selction (`$name`)
+    - a list of views (`Text`) which represent the possible selections. This list is generated with a `ForEach` "loop"
+        - we iterate over `students`
+        - we tell to the `ForEach` how to uniquely identify each element (`id` parameter (we use `\.self` which means each string))
+        - we create the view `Text` with text the first element of the closure (the string itself)
