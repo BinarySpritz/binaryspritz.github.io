@@ -1233,7 +1233,7 @@ Last thing is the `#Preview` statement which initialize an object of type `Conte
 ## Form
 A `Form` is a graphical element which can be used as container for other elements (usually, for data input from the user). We can separate sections of the forms, grouping them inside a `Grouping` object.
 
-<table>
+<table style="min-width: 50em">
     <tr>
         <td>{% highlight swift %}
 var body: some View {
@@ -1257,7 +1257,7 @@ var body: some View {
 ## Navigation bar
 Container which allow the navigation between views. We surround our Form with a `NavigationStack` and add some properties to it applying them to the form.
 
-<table>
+<table style="min-width: 50em">
     <tr>
         <td>{% highlight swift %}
 var body: some View {
@@ -1387,7 +1387,7 @@ Finally, we declare the `body` computed variable which will be computed every ti
 
 ## First iteration
 
-<table>
+<table style="min-width: 50em">
     <tr>
         <td>{% highlight swift %}
 struct ContentView: View {
@@ -1427,7 +1427,7 @@ Next step is adding a picker for the number of people eating at out table.
 
 We start declaring a `Picker` which will be binded to the `numberOfPeople` variable and will show `# of people` as text. In addition we can change how the view to select is shown. Adding a `NavigationStack` around our `Form` we can set the `pickerStyle` to `.navigationLink` to show a new "window".
 
-<table>
+<table style="min-width: 50em">
     <tr>
         <td rowspan="2">
 {% highlight swift %}
@@ -1477,7 +1477,7 @@ struct ContentView: View {
 ## Third iteration
 Then, we define our graphical element to input the tip percentage. We use again a `Picker` with the `pickerStyle` as `.segmented`. Moreover, we add a header text for the section holding this new picker to tell the users what they have to do  
 
-<table>
+<table style="min-width: 50em">
     <tr>
         <td>{% highlight swift %}
 struct ContentView: View {
@@ -1511,7 +1511,7 @@ struct ContentView: View {
 ## Fourth iteration
 Finally, we compute the total per person. We create a new computer varible and inside it we add the computation which result will be shown in the last `Text`
 
-<table>
+<table style="min-width: 50em">
     <tr>
         <td>{% highlight swift %}
 struct ContentView: View {
