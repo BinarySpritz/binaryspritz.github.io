@@ -25,8 +25,8 @@ Index:
 - [Day 13](#day-13): protocols and extensions
 - [Day 14](#day-14): optionals
 - [Day 15](#day-15): Swift recap
-- [Day 16](#day-16): WeSplit part 1
-- [Day 17](#day-17): WeSplit part 2
+- [Day 16](#day-16): WeSplit part 1/2
+- [Day 17](#day-17): WeSplit part 2/2
 
 
 # Day 1
@@ -1233,7 +1233,7 @@ Last thing is the `#Preview` statement which initialize an object of type `Conte
 ## Form
 A `Form` is a graphical element which can be used as container for other elements (usually, for data input from the user). We can separate sections of the forms, grouping them inside a `Grouping` object.
 
-<table style="min-width: 50em">
+<table>
     <tr>
         <td>{% highlight swift %}
 var body: some View {
@@ -1257,7 +1257,7 @@ var body: some View {
 ## Navigation bar
 Container which allow the navigation between views. We surround our Form with a `NavigationStack` and add some properties to it applying them to the form.
 
-<table style="min-width: 50em">
+<table>
     <tr>
         <td>{% highlight swift %}
 var body: some View {
@@ -1386,10 +1386,7 @@ Let's start developing our WeSplit application. First of all we need three state
 Finally, we declare the `body` computed variable which will be computed every time a state variable changes.
 
 ## First iteration
-
-<table style="min-width: 50em">
-    <tr>
-        <td>{% highlight swift %}
+{% highlight swift %}
 struct ContentView: View {
     @State private var checkAmount = 0.0
     @State private var numberOfPeople = 2
@@ -1412,11 +1409,9 @@ struct ContentView: View {
         }
     }
 }
-    {% endhighlight %}
-    </td>
-        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV1.png" alt="First implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/></td>
-    </tr>
-</table>
+{% endhighlight %}
+
+![First implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)](/assets/images/2024-06-20-100-days-of-swiftui/weSplitV1.png)
 
 A new element is the access to some `Locale` value. It holds the identifier for the current currency ("EUR" in my case). It is handled with nil coalescing and a default in case of errors.
 
@@ -1427,9 +1422,6 @@ Next step is adding a picker for the number of people eating at out table.
 
 We start declaring a `Picker` which will be binded to the `numberOfPeople` variable and will show `# of people` as text. In addition we can change how the view to select is shown. Adding a `NavigationStack` around our `Form` we can set the `pickerStyle` to `.navigationLink` to show a new "window".
 
-<table style="min-width: 50em">
-    <tr>
-        <td rowspan="2">
 {% highlight swift %}
 struct ContentView: View {
     @State private var checkAmount = 0.0
@@ -1462,24 +1454,23 @@ struct ContentView: View {
     }
 }
 {% endhighlight %}
-        </td>
+
+<table style="min-width: 50em">
+    <tr>
         <td>
             <img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/>
         </td>
-    </tr>
-    <tr>
         <td>
             <img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2b.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/>
         </td>
+
     </tr>
 </table>
 
 ## Third iteration
 Then, we define our graphical element to input the tip percentage. We use again a `Picker` with the `pickerStyle` as `.segmented`. Moreover, we add a header text for the section holding this new picker to tell the users what they have to do  
 
-<table style="min-width: 50em">
-    <tr>
-        <td>{% highlight swift %}
+{% highlight swift %}
 struct ContentView: View {
     @State private var checkAmount = 0.0
     @State private var numberOfPeople = 2
@@ -1488,32 +1479,44 @@ struct ContentView: View {
     let tipPercenteges = [10, 15, 20, 25, 0]
     
     var body: some View {
-        Form {
-            Section {
-                TextField("Amount", 
-                            value: $checkAmount, 
-                            format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-                    .keyboardType(.decimalPad)
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Amount", value: $checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .keyboardType(.decimalPad)
+                    
+                    Picker("Number of people", selection: $numberOfPeople) {
+                        ForEach(2..<100) {
+                            Text("\($0) people")
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+
+                Section("How much do you want to tip") {
+                    Picker("Tip percentage", selection: $tipPercentage) {
+                        ForEach(tipPercenteges, id: \.self) {
+                            Text($0, format: .percent)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                
+                Section {
+                    Text(checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                }
             }
-            
-            Section {
-                Text(checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
-            }
+            .navigationTitle("WeSplit")
         }
     }
 }
-    {% endhighlight %}
-    </td>
-        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV3.png" alt="Third implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/></td>
-    </tr>
-</table>
+{% endhighlight %}
+![Third implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)](/assets/images/2024-06-20-100-days-of-swiftui/weSplitV3.png) 
 
 ## Fourth iteration
 Finally, we compute the total per person. We create a new computer varible and inside it we add the computation which result will be shown in the last `Text`
 
-<table style="min-width: 50em">
-    <tr>
-        <td>{% highlight swift %}
+{% highlight swift %}
 struct ContentView: View {
     @State private var checkAmount = 0.0
     @State private var numberOfPeople = 2
@@ -1564,11 +1567,9 @@ struct ContentView: View {
         }
     }
 }
-    {% endhighlight %}
-    </td>
-        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV4.png" alt="Fourth implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/></td>
-    </tr>
-</table>
+{% endhighlight %}
+
+![Fourth implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)](/assets/images/2024-06-20-100-days-of-swiftui/weSplitV4.png)
 
 ## Fifth iteration
 Let's fix the "bug" of the keyboard not disapearing after we edited the check amount.
