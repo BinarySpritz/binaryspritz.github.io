@@ -1470,7 +1470,7 @@ struct ContentView: View {
     }
 </script>
 
-<div style="max-width: 100%; display: flex; margin-left: 1em;">
+<div style="max-width: 100%; display: flex;">
     <button style="margin-right: 1em" onclick="weSplictV2ChangeToVersionA()"><</button>
     <img style="max-width:75%;" id="WeSplitV2" src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)">
     <button style="margin-left: 1em" onclick="weSplictV2ChangeToVersionB()">></button>
