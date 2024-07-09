@@ -1457,17 +1457,24 @@ struct ContentView: View {
 }
 {% endhighlight %}
 
-<table style="min-width: 50em">
-    <tr>
-        <td>
-            <img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/>
-        </td>
-        <td>
-            <img src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2b.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"/>
-        </td>
 
-    </tr>
-</table>
+<script>
+    function weSplictV2ChangeToVersionA() {
+        document.getElementById("WeSplitV2").src = "/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png"
+        document.getElementById("WeSplitV2").alt = "Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"
+    }
+
+    function weSplictV2ChangeToVersionB() {
+        document.getElementById("WeSplitV2").src = "/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2b.png"
+        document.getElementById("WeSplitV2").alt = "Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"
+    }
+</script>
+
+<div style="max-width: 100%; display: flex">
+    <button style="margin-right: 1em" onclick="weSplictV2ChangeToVersionA()"><</button>
+    <img id="WeSplitV2" src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)">
+    <button style="margin-left: 1em" onclick="weSplictV2ChangeToVersionB()">></button>
+</div>
 
 ## Third iteration
 Then, we define our graphical element to input the tip percentage. We use again a `Picker` with the `pickerStyle` as `.segmented`. Moreover, we add a header text for the section holding this new picker to tell the users what they have to do  
