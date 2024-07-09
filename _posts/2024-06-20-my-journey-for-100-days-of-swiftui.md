@@ -28,6 +28,7 @@ Index:
 - [Day 16](#day-16): WeSplit part 1/2
 - [Day 17](#day-17): WeSplit part 2/2
 - [Day 18](#day-18): WeSplit challenges
+- [Day 19](#day-19): Unit converter
 
 
 # Day 1
@@ -1720,3 +1721,55 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![WeSplit with the challenges implemented](/assets/images/2024-06-20-100-days-of-swiftui/weSplitV5.png)
+
+# Day 19
+Today we have built a unit converter app from scratch without any guide. 
+
+The task required to look back at the code wrote last days and study the `Measurement` library provided by Swift. 
+
+The result is an app which is capable of converting any type of lenght unit into another.
+
+{% highlight swift %}
+struct ContentView: View {
+    
+    @State private var inputMeasure = 0.0
+    @State private var inputUnit = UnitLength.feet
+    @State private var outputUnit = UnitLength.meters
+    private var outputMeasure: Double {
+        let input = Measurement(value: inputMeasure, unit: inputUnit)
+        return input.converted(to: outputUnit).value
+    }
+    
+    let possibleUnits: [UnitLength] = [.astronomicalUnits, .centimeters, .decameters, .decimeters, .fathoms, .feet, .furlongs, .hectometers, .inches, .kilometers, .lightyears, .megameters, .meters, .micrometers, .miles, .millimeters, .nanometers, .nauticalMiles, .parsecs, .picometers, .scandinavianMiles, .yards]
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Input unit") {
+                    Picker("Input unit", selection: $inputUnit) {
+                        ForEach(possibleUnits, id: \.self) {
+                            Text($0.symbol)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                    TextField("Input value", value: $inputMeasure, format: .number)
+                        .keyboardType(.numberPad)
+                }
+                
+                Section("Output") {
+                    Picker("Output unit", selection: $outputUnit) {
+                        ForEach(possibleUnits, id: \.self) {
+                            Text($0.symbol)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                    Text("\(outputMeasure) (\(outputUnit.symbol))")
+                }
+            }
+            .navigationTitle("Unit converter")
+        }
+    }
+}
+{% endhighlight %}
+
+![UnitConverter app rendered in the canvas](/assets/images/2024-06-20-100-days-of-swiftui/unitConverterV1.png)
