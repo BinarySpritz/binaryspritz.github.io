@@ -27,6 +27,7 @@ Index:
 - [Day 15](#day-15): Swift recap
 - [Day 16](#day-16): WeSplit part 1/2
 - [Day 17](#day-17): WeSplit part 2/2
+- [Day 18](#day-18): WeSplit challenges
 
 
 # Day 1
@@ -1637,3 +1638,85 @@ struct ContentView: View {
     }
 }
 {% endhighlight %}
+
+# Day 18
+Today is focused on trying adding functionality to WeSplit without any help. The tasks are: 
+1. Add a header for the last section
+2. Add another section with the grand total
+3. Change how the user select the tip percentage. From the segmented view to a list view (as the number of people)
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var checkAmount = 0.0
+    @State private var numberOfPeople = 2
+    @State private var tipPercentage = 20
+    @FocusState private var amountIsFocused: Bool
+    
+    //let tipPercenteges = [10, 15, 20, 25, 0]
+
+    private var peopleCount: Double {
+        Double(numberOfPeople + 2)
+    }
+    
+    private var grandTotal: Double {
+        let tipSelection = Double(tipPercentage)
+        let tipValue = checkAmount / 100 * tipSelection
+        let grandTotal = checkAmount + tipValue
+        
+        return grandTotal
+    }
+    
+    private var totalPerPerson: Double {
+        let amountPerPerson = grandTotal / peopleCount
+        
+        return amountPerPerson
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Amount", value: $checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .keyboardType(.decimalPad)
+                        .focused($amountIsFocused)
+                    
+                    Picker("Number of people", selection: $numberOfPeople) {
+                        ForEach(2..<100) {
+                            Text("\($0) people")
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                    
+                }
+                
+                Section("How much do you want to tip") {
+                    Picker("Tip percentage", selection: $tipPercentage) {
+                        ForEach(1..<101, id: \.self) {
+                            Text($0, format: .percent)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+                
+                Section("Grand total") {
+                    Text(grandTotal, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                }
+                
+                Section("Total per person") {
+                    Text(totalPerPerson, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                }
+            }
+            .navigationTitle("WeSplit")
+            .toolbar {
+                if amountIsFocused {
+                    Button("Done") {
+                        amountIsFocused = false
+                    }
+                }
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+![WeSplit with the challenges implemented](/assets/images/2024-06-20-100-days-of-swiftui/weSplitV5.png)
