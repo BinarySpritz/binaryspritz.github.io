@@ -29,6 +29,7 @@ Index:
 - [Day 17](#day-17): WeSplit part 2/2
 - [Day 18](#day-18): WeSplit challenges
 - [Day 19](#day-19): Unit converter
+- [Day 20](#day-20): GuessTheFlag part 1/3
 
 
 # Day 1
@@ -1459,21 +1460,16 @@ struct ContentView: View {
 
 
 <script>
-    function weSplictV2ChangeToVersionA() {
-        document.getElementById("WeSplitV2").src = "/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png"
-        document.getElementById("WeSplitV2").alt = "Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"
-    }
-
-    function weSplictV2ChangeToVersionB() {
-        document.getElementById("WeSplitV2").src = "/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2b.png"
-        document.getElementById("WeSplitV2").alt = "Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)"
+    function changeImage(id, src, alt) {
+        document.getElementById(id).src = src
+        document.getElementById(id).alt = alt
     }
 </script>
 
 <div style="max-width: 100%; display: flex; justify-content: center; align-items: stretch;">
-    <button style="margin-right: 1em" onclick="weSplictV2ChangeToVersionA()"><</button>
+    <button style="margin-right: 1em" onclick="changeImage('WeSplitV2', '/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png', 'Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)')"><</button>
     <img style="max-width:70%;" id="WeSplitV2" src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)">
-    <button style="margin-left: 1em" onclick="weSplictV2ChangeToVersionB()">></button>
+    <button style="margin-left: 1em" onclick="changeImage('WeSplitV2', '/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2b.png', 'Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)')">></button>
 </div>
 
 ## Third iteration
@@ -1780,3 +1776,175 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![UnitConverter app rendered in the canvas](/assets/images/2024-06-20-100-days-of-swiftui/unitConverterV1.png)
+
+# Day 20
+## Stack
+In SwiftUI, stacks are foundamental. There are three kind of them: `VStack` (vertical), `HStack` (horizontal), and `ZStack` (z-axis/deep).
+
+They help us in aligning items in a direction. Moreover we can specify the `spacing` and the `aligninment` between the elements inisde.
+
+In addtion to stacks, the `Spacer` has been introduced. It helps spacing element inside another view (a stack for example).
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    VStack(spacing: 20) {
+        Spacer()
+        Text("Hello workd")
+        Text("This is another text")
+        Spacer()
+        Spacer()
+    }
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/stackA.png" alt="Vertical stack rendered in the canvas"/></td>
+    </tr>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    HStack(spacing: 20) {
+        Text("Hello workd")
+        Text("This is another text")
+    }
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/stackb.png" alt="Horizontal stack rendered in the canvas"/></td>
+    </tr>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    ZStack {
+        Text("Hello world")
+        Text("This is another text")
+    }
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/stackC.png" alt="Stack on the z-axis rendered in the canvas"/></td>
+    </tr>
+</table>
+
+## Frames
+In SwiftUI, frames are the geometry entity behind each graphical element shown on screen.
+
+For each one, we can set the `frame` with `width`, `height` and `min` and `max` variants of them.
+
+## Color
+The `Color` entity is the thing that allows us to make our apps colorfull. We can use predefined color (which can automatically switch when the user change from light to dark and vice versa), make our own color, or even use materials.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    ZStack {
+        VStack(spacing: 0) {
+            Color.red
+            Color.blue
+        }
+            
+        Text("Your content")
+            .foregroundStyle(.secondary)
+            .padding(50)
+            .background(.ultraThinMaterial)
+    }
+    .ignoresSafeArea() 
+}
+    {% endhighlight %}</td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/color.png" alt="Example with colors and materials rendered in the canvas"/></td>
+    </tr>
+</table>
+
+Linked to colors, there are gradients. In SwiftUI we have three kind of gradients to use: `LinearGradient`, `RadialGradient`, `AngularGradient`. For each one of them we can specify the colors and also the stops for the gradient.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    ZStack {
+        LinearGradient(colors: [.red, .blue], startPoint: .top, endPoint: .bottom)
+            
+        Text("Your content")
+            .foregroundStyle(.secondary)
+            .padding(50)
+            .background(.ultraThinMaterial)
+    }
+    .ignoresSafeArea() 
+}
+    {% endhighlight %}</td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/gradient.png" alt="Example with a linear gradient rendered in the canvas"/></td>
+    </tr>
+</table>
+
+## Buttons
+Buttons are what users interacts with. As simple as possible, a button is made of a string label and an action to perform when it is clicked. The action can be a method and not an anonymous function.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    VStack {
+        Button("Button 1") { }
+            .buttonStyle(.bordered)
+        
+        Button("Button 2", role: .destructive) {
+            print("Hello from button 3")
+        }
+            .buttonStyle(.bordered)
+        
+        Button("Button 3", action: helloButton)
+            .buttonStyle(.bordered)
+            .tint(.indigo)
+        
+        Button {
+            print("Button 4 was tapped")
+        } label: {
+            Text("Custom label")
+                .padding(20)
+                .foregroundStyle(.white)
+                .background(.green)
+        }
+    }
+}
+    
+func helloButton() {
+    print("Hello from a button")
+}
+    {% endhighlight %}</td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/buttons.png" alt="Four buttons built in different ways rendered in the canvas"/></td>
+    </tr>
+</table>
+
+## Images
+The way to show images in SwiftUI is using the `Image` element. It allows us to show an image present in the `Assets` folder or a `systemImage` from the `SFSymbols` app. We can declare if the image is just decorative (`Image(decorative: "<imageName>")`) to help screen reader in better understanding what they are reading.
+
+## Label
+A `Label` is an object that can be used inside the `label: {}` view of a `Button` instad of `Text`. With `Label`, iOS is capable of performing changes if needed to it without the need to specify anything.
+
+## Alerts
+To show a message to the user we can use alerts. In SwiftUI we **don't** declare a object of type `Alert` and the present it in someway. In SwiftUI we declare a `State` variable which will tell if we are in a state presenting the alert or not. Then we add to our view the property `alert` biding to it the state variable.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var showingAlert = false
+    
+    var body: some View {
+        VStack {
+            Button("Show alert") { showingAlert = true }
+        }
+        .alert("Hello from the alert", isPresented: $showingAlert) {
+            Button("Ok") { showingAlert = false }
+        } message: {
+            Text("Please read this")
+        }
+    }
+}
+{% endhighlight %}
+
+<div style="max-width: 100%; display: flex; justify-content: center; align-items: stretch;">
+    <button style="margin-right: 1em" onclick="changeImage('ShowingAlert', '/assets/images/2024-06-20-100-days-of-swiftui/alertA.png', 'Button to trigger an alert')"><</button>
+    <img style="max-width:70%;" id="ShowingAlert" src="/assets/images/2024-06-20-100-days-of-swiftui/alertA.png" alt="Button to trigger an alert">
+    <button style="margin-left: 1em" onclick="changeImage('ShowingAlert', '/assets/images/2024-06-20-100-days-of-swiftui/alertB.png', 'Alert with a button to dismissi it')">></button>
+</div>
