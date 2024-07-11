@@ -1859,9 +1859,7 @@ var body: some View {
 
 Linked to colors, there are gradients. In SwiftUI we have three kind of gradients to use: `LinearGradient`, `RadialGradient`, `AngularGradient`. For each one of them we can specify the colors and also the stops for the gradient.
 
-<table>
-    <tr>
-        <td>{% highlight swift %}
+{% highlight swift %}
 var body: some View {
     ZStack {
         LinearGradient(colors: [.red, .blue], startPoint: .top, endPoint: .bottom)
@@ -1873,10 +1871,9 @@ var body: some View {
     }
     .ignoresSafeArea() 
 }
-    {% endhighlight %}</td>
-        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/gradient.png" alt="Example with a linear gradient rendered in the canvas"/></td>
-    </tr>
-</table>
+{% endhighlight %}
+
+![Example with a linear gradient rendered in the canvas](/assets/images/2024-06-20-100-days-of-swiftui/gradient.png)
 
 ## Buttons
 Buttons are what users interacts with. As simple as possible, a button is made of a string label and an action to perform when it is clicked. The action can be a method and not an anonymous function.
