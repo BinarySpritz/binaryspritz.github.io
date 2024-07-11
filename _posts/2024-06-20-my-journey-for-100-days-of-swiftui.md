@@ -1811,7 +1811,7 @@ var body: some View {
 }
     {% endhighlight %}
     </td>
-        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/stackb.png" alt="Horizontal stack rendered in the canvas"/></td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/stackB.png" alt="Horizontal stack rendered in the canvas"/></td>
     </tr>
     <tr>
         <td>{% highlight swift %}
