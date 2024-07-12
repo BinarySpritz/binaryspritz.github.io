@@ -30,6 +30,7 @@ Index:
 - [Day 18](#day-18): WeSplit challenges
 - [Day 19](#day-19): Unit converter
 - [Day 20](#day-20): GuessTheFlag part 1/3
+- [Day 21](#day-21): GuessTheFlag part 2/3
 
 
 # Day 1
@@ -1945,3 +1946,94 @@ struct ContentView: View {
     <img style="max-width:70%;" id="ShowingAlert" src="/assets/images/2024-06-20-100-days-of-swiftui/alertA.png" alt="Button to trigger an alert">
     <button style="margin-left: 1em" onclick="changeImage('ShowingAlert', '/assets/images/2024-06-20-100-days-of-swiftui/alertB.png', 'Alert with a button to dismissi it')">></button>
 </div>
+
+# Day 21
+## Images from file
+We can import images into our XCode project. More precisely, we import them into the `Assets` directory. Each image can have three dimesion: __1x__, __2x__, and __3x__. We can automatically import all the images we want and XCode will understand their dimension based on the file name. `fileName@2x and `fileName@3x`  will create a unique asset with two images (__2x__ and __3x__).
+
+## Guess the flag
+Guess the flag is a simple game which asks to the user to indetify the correct flag among three options. Today's effort is concentrated into creating the user interface and the simple logic of the game (except for storing the score).
+
+In SwiftUI every bit of the user interface is made with code, which means that things get confused when a lot of different modifier are applied and the logic is, somehow, hidden.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Nigeria", "Poland", "Spain", "UK", "Ukraine", "US"].shuffled()
+    @State var correctAnswer = Int.random(in: 0...2)
+    
+    @State private var showingScore = false
+    @State private var scoreTitle = ""
+    
+    var body: some View {
+        ZStack {
+            RadialGradient(stops: [
+                .init(color: Color(red: 0.1, green: 0.2, blue: 0.45), location: 0.3),
+                .init(color: Color(red: 0.76, green: 0.15, blue: 0.26), location: 0.3)
+            ], center: .top, startRadius: 200, endRadius: 700)
+                .ignoresSafeArea()
+            
+            VStack {
+                Spacer()
+                
+                Text("Guess the flag")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                VStack(spacing: 15) {
+                    VStack {
+                        Text("Tap the flag of")
+                            .foregroundStyle(.secondary)
+                            .font(.subheadline.weight(.heavy))
+                        
+                        Text(countries[correctAnswer])
+                            .font(.largeTitle.weight(.semibold))
+                    }
+                    
+                    ForEach(0..<3) { number in
+                            Button {
+                            flagTapped(number)
+                        } label: {
+                            Image(countries[number])
+                                .clipShape(.capsule)
+                                .shadow(radius: 5)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .background(.regularMaterial)
+                .clipShape(.rect(cornerSize: CGSize(width: 20, height: 20)))
+                
+                Spacer()
+                Spacer()
+                
+                Text("Score: ???")
+                    .foregroundStyle(.white)
+                    .font(.title.bold())
+                
+                Spacer()
+            }
+            .padding()
+        }
+        .alert(scoreTitle, isPresented: $showingScore) {
+            Button("Continue", action: askQuestion)
+        } message: {
+            Text("Your score is ???")
+        }
+    }
+    
+    func flagTapped(_ number: Int) {
+        scoreTitle = number == correctAnswer ? "Correct" : "Wrong"
+        showingScore = true
+    }
+    
+    func askQuestion() {
+        countries.shuffle()
+        correctAnswer = Int.random(in: 0...2)
+    }
+}
+{% endhighlight %}
+
+![First version of guess the flag](/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV1.png)
