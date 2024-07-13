@@ -5,6 +5,20 @@ date: 2024-06-20 10:02:00 +0100
 author: "Marco Ferrati"
 categories : swift
 ---
+
+<style>
+p:has(img) {
+    text-align: center;
+}
+</style>
+
+<script>
+    function changeImage(id, src, alt) {
+        document.getElementById(id).src = src
+        document.getElementById(id).alt = alt
+    }
+</script>
+
 In this blog post, I will log my journey in learning Swift and SwiftUI by following "[The 100 days of SwiftUI](https://www.hackingwithswift.com/100/swiftui)".
 
 There are two reasons for this diary to exist and be publicly available: first, to share my thoughts about the language and the framework, and second, as a review of the learning process proposed by "The 100 Days of Swift," which, as the title says, you have to follow for one hundred days. Moreover, as I am a person who already knows some programming languages, I was curious about how a new language is taught.
@@ -1461,13 +1475,6 @@ struct ContentView: View {
 {% endhighlight %}
 
 
-<script>
-    function changeImage(id, src, alt) {
-        document.getElementById(id).src = src
-        document.getElementById(id).alt = alt
-    }
-</script>
-
 <div style="max-width: 100%; display: flex; justify-content: center; align-items: stretch;">
     <button style="margin-right: 1em" onclick="changeImage('WeSplitV2', '/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png', 'Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)')"><</button>
     <img style="max-width:70%;" id="WeSplitV2" src="/assets/images/2024-06-20-100-days-of-swiftui/weSplitV2a.png" alt="Second implementation of the WeSplit app rendered in the canvas. There is just a textField to input numbers (the check amount)">
@@ -2169,7 +2176,7 @@ struct ContentView: View {
 {% endhighlight %}
 
 <div style="max-width: 100%;">
-    <img style="max-width:70%;" id="GuessTheFlag" src="/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2a.png" alt="Button to trigger an alert">
+    <img id="GuessTheFlag" src="/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2a.png" alt="Button to trigger an alert">
         <div style="display: flex; flex-direction: row; justify-content: space-evenly">
         <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2a.png', 'Main content view of GuessTheFlag. With the score implemented')">1</button>
         <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2b.png', 'Alert showing a wrong answer in GuessTheFlag')">2</button>
