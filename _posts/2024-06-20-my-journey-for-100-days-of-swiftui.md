@@ -31,6 +31,7 @@ Index:
 - [Day 19](#day-19): Unit converter
 - [Day 20](#day-20): GuessTheFlag part 1/3
 - [Day 21](#day-21): GuessTheFlag part 2/3
+- [Day 22](#day-22): GuessTheFlag part 3/3
 
 
 # Day 1
@@ -2037,3 +2038,142 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![First version of guess the flag](/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV1.png)
+
+# Day 22
+Today we have completed the "Guess the flag" app as a challenge. There were three tasks:
+1. Add a property to store the current score
+2. Have a more descriptive text when the user chooses the wrong answer. Telling them what was the flag they picked
+3. Create the concept of "game" which lasts for 8 attempts. Then, a final alert is shown when the number of attempts reaches zero.
+
+The first task is trivial. We add a new `@State private var score = 0` and update it in the `flagTapped()` function.
+
+Then, we have to remeber if the user picked the wrong answer. The solution I tought is: having a state variable holidng if the user picked a wrong flag and, if so, which one. I implemented it with an optional int: `@State private var wrongAnswer: Int? = nil`. When the user select the wrong flag, in the `flagTapped()` function we save the `number` parameter in `wrongAnswer` and when we show the alert we check if `wrongAnswer` is not `nil`. Then, when we ask a new question, we reset the value to `nil`.
+
+Finally, for the last task we need a new boolean variable to bind to a new alert and a counter to keep track of the number of attempts the user already tried. We updated both these two state variable in the `flagTapped` function paying attention at which `showing` variable we set ti `true`.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Nigeria", "Poland", "Spain", "UK", "Ukraine", "US"].shuffled()
+    @State var correctAnswer = Int.random(in: 0...2)
+    
+    @State private var showingScore = false
+    @State private var scoreTitle = ""
+    @State private var wrongAnswer: Int? = nil
+    
+    @State private var score = 0
+    @State private var attempts = 8
+    @State private var showingFinalResutl = false
+    
+    var body: some View {
+        ZStack {
+            RadialGradient(stops: [
+                .init(color: Color(red: 0.1, green: 0.2, blue: 0.45), location: 0.3),
+                .init(color: Color(red: 0.76, green: 0.15, blue: 0.26), location: 0.3)
+            ], center: .top, startRadius: 200, endRadius: 700)
+                .ignoresSafeArea()
+            
+            VStack {
+                Spacer()
+                
+                Text("Guess the flag")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                VStack(spacing: 15) {
+                    VStack {
+                        Text("Tap the flag of")
+                            .foregroundStyle(.secondary)
+                            .font(.subheadline.weight(.heavy))
+                        
+                        Text(countries[correctAnswer])
+                            .font(.largeTitle.weight(.semibold))
+                    }
+                    
+                    ForEach(0..<3) { number in
+                        Button {
+                            flagTapped(number)
+                        } label: {
+                            Image(countries[number])
+                                .clipShape(.capsule)
+                                .shadow(radius: 5)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .background(.regularMaterial)
+                .clipShape(.rect(cornerSize: CGSize(width: 20, height: 20)))
+                
+                Spacer()
+                Spacer()
+                
+                Text("Score: \(score)")
+                    .foregroundStyle(.white)
+                    .font(.title.bold())
+                
+                Text("Remaining questions: \(attempts)")
+                    .foregroundStyle(.white)
+                    .font(.subheadline)
+                
+                Spacer()
+            }
+            .padding()
+        }
+        .alert(scoreTitle, isPresented: $showingScore) {
+            Button("Continue", action: askQuestion)
+        } message: {
+            if let wrongAnswer = wrongAnswer {
+                Text("Wrong, that is the flag of \(countries[wrongAnswer])")
+            }
+            Text("Your score is \(score)")
+        }
+        .alert("Game over", isPresented: $showingFinalResutl) {
+            Button("Restart", action: restart)
+        } message: {
+            Text("Your final score is \(score)")
+        }
+    }
+    
+    func flagTapped(_ number: Int) {
+        if number == correctAnswer {
+            scoreTitle = "Correct"
+            score += 1
+        } else {
+            scoreTitle = "Wrong"
+            wrongAnswer = number
+            score -= 1
+        }
+        
+        attempts -= 1
+        if attempts == 0 {
+            showingFinalResutl = true
+        } else {
+            showingScore = true
+        }
+    }
+    
+    func askQuestion() {
+        countries.shuffle()
+        correctAnswer = Int.random(in: 0...2)
+        wrongAnswer = nil
+    }
+    
+    func restart() {
+        score = 0
+        attempts = 8
+        askQuestion()
+    }
+}
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img style="max-width:70%;" id="GuessTheFlag" src="/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2a.png" alt="Button to trigger an alert">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2a.png', 'Main content view of GuessTheFlag. With the score implemented')">1</button>
+        <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2b.png', 'Alert showing a wrong answer in GuessTheFlag')">2</button>
+        <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2c.png', 'Alert showing the end of the game in GuessTheFlag')">3</button>
+    </div>
+</div>
+
