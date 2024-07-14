@@ -46,6 +46,7 @@ Index:
 - [Day 20](#day-20): GuessTheFlag part 1/3
 - [Day 21](#day-21): GuessTheFlag part 2/3
 - [Day 22](#day-22): GuessTheFlag part 3/3
+- [Day 23](#day-23): more details on view and modifier
 
 
 # Day 1
@@ -2183,4 +2184,183 @@ struct ContentView: View {
         <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagV2c.png', 'Alert showing the end of the game in GuessTheFlag')">3</button>
     </div>
 </div>
+
+# Day 23
+Today we deep dive into technical stuff answering some questions on why SwiftUI works like that. 
+
+## Why structs?
+Structs are simpler data structure than classes. They forbid inheritance, which means that they cannot grow without bounds inheriting "useless" attributes. We built from scratch every view we want to show to the user composing it with other views (present in SwiftUI or made by us).
+
+## Modifiers order
+When we apply some modifiers to our views the order is important and is red from top to bottom.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    Button("Click me!") {
+        // Do nothing
+    }
+    .background(.red)
+    .frame(width: 200, height: 200)
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/modifierOrderA.png" alt="A button with two modifiers: the first to change the background color and the second to change the size of the frame"/></td>
+    </tr>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    Button("Click me!") {
+        // Do nothing
+    }
+    .frame(width: 200, height: 200)
+    .background(.red)
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/modifierOrderB.png" alt="A button with two modifiers: the first to change the size of the frame and the second to change the background color"/></td>
+    </tr>
+</table>
+
+Moreover, modifiers stack on top of each other.
+
+<table>
+    <tr>
+        <td>{% highlight swift %}
+var body: some View {
+    Text("Hello world!")
+    .background(.red)
+    .padding()
+    .background(.green)
+    .padding()
+    .background(.blue)
+}
+    {% endhighlight %}
+    </td>
+        <td><img src="/assets/images/2024-06-20-100-days-of-swiftui/modifierStack.png" alt="Three `padding` modifiers applied in 'different' moment which add together"/></td>
+    </tr>
+</table>
+
+## Why `some View`?
+We don't want to specify which specific type of view the `body` variable has. That's because its runtime type is pretty complex. 
+
+{% highlight swift %}
+var body: some View {
+    Button("Click me!") {
+        print(type(of: self.body))
+    }
+    .frame(width: 200, height: 200)
+    .background(.red)
+}
+{% endhighlight %}
+
+When run in a simulator in a simulator and the output of `print` is `ModifiedContent<ModifiedContent<Button<Text>, _FrameLayout>, _BackgroundStyleModifier<Color>>`. This is a complex type we don't want to specify (and change as soon as we change a modifier).
+
+## Conditional modifiers
+In our `body` variable we can have `if-then-else` statement to declare different elements but when we cannot use it to declare different modifiers. The solution is using the ternary operator (`<condition> ? <true value> : <false value>`).
+
+## Apply modifiers to all child element
+We can apply a modifier to an "environment". For example a set of `Text`s inside a `VStack` can be modified applying an **environment modifier** to the `VStack`. It is important to notice that not every modifier are environment modifier.
+
+## View as constants
+We can declare views as `let aViee = Text("Some Text")` and use `aView` in our `body` variable. Keep in mind that **binding** in this case could be tricky and we have to create a stack or a `Group` if we want to add multiple elements inside our attribute. A possible solution is creating a computed variable with the `@ViewBuilder` attribute.
+
+## Extract and compose views
+We can define our own views and use them anywhere.
+
+{% highlight swift %}
+struct CapsuleText: View {
+    var text: String
+    
+    var body: some View {
+        Text(text)
+            .font(.largeTitle)
+            .padding()
+            .background(.blue)
+            .clipShape(.capsule)
+    }
+}
+
+struct ContentView: View {
+    var body: some View {
+        CapsuleText(text: "Hello")
+            .foregroundStyle(.white)
+        CapsuleText(text: "World")
+            .foregroundStyle(.yellow)
+    }
+}
+{% endhighlight %}
+
+![Example of view composition. Two capsuled text with four equal modifiers and one different](/assets/images/2024-06-20-100-days-of-swiftui/viewComposition.png)
+
+## Custom modifiers
+We can declare structs which implemnt the `ViewModifier` protocol to create our own modifier. Then we can apply them to any view passing an object of that struct to the `modifier` modifier. To make things easier we can define a function which apply our modifier in an extension of `View`.
+
+{% highlight swift %}
+struct Title: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.largeTitle)
+            .padding()
+            .foregroundStyle(.white)
+            .background(.blue)
+            .clipShape(.capsule)
+    }
+}
+
+extension View {
+    func titleStyle() -> some View {
+        modifier(Title())
+    }
+}
+
+struct ContentView: View {
+    var body: some View {
+        Text("Hello")
+            .modifier(Title())
+        Text("World")
+            .titleStyle()
+    }
+}
+{% endhighlight %}
+
+## Custom containers
+We can even define our stack. For example we define a struct representing a `GridStack`. It is a bit more complex than everything else seen so far but it is understandable.
+
+{% highlight swift %}
+struct GridStack<Content: View>: View {
+    let rows: Int
+    let columns: Int
+    @ViewBuilder let content: (Int, Int) -> Content
+    
+    var body: some View {
+        VStack {
+            ForEach(0..<rows, id:\.self) { row in
+                HStack {
+                    ForEach(0..<columns, id: \.self) { col in
+                        content(row, col)
+                            .padding()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ContentView: View {
+    var body: some View {
+        GridStack(rows: 4, columns: 3) { row, col in
+            Image(systemName: "\(row * 3 + col).circle")
+            Text("\(row) \(col)")
+        }
+    }
+}
+{% endhighlight %}
+
+![Example of GridStack](/assets/images/2024-06-20-100-days-of-swiftui/gridStack.png)
+
+There are a couple of things which are worthy to notice:
+1. `GridStack<Content: View>` is the definition of a generic or template. The `content` closure will return a something which implements `View`
+2. `@ViewBuilder` means that the resulting view will be build taking into consideration every declared element. That is important because we can avoid to embedd the `Image` and the `Text` inside a container in our `ContentView`. It is worth noticing that the `padding` modifier applied to content will be applied to both `Image` and `Text` 
 
