@@ -47,6 +47,7 @@ Index:
 - [Day 21](#day-21): GuessTheFlag part 2/3
 - [Day 22](#day-22): GuessTheFlag part 3/3
 - [Day 23](#day-23): more details on view and modifier
+- [Day 24](#day-24): challenges with details learnt during day 23
 
 
 # Day 1
@@ -2364,3 +2365,242 @@ There are a couple of things which are worthy to notice:
 1. `GridStack<Content: View>` is the definition of a generic or template. The `content` closure will return a something which implements `View`
 2. `@ViewBuilder` means that the resulting view will be build taking into consideration every declared element. That is important because we can avoid to embedd the `Image` and the `Text` inside a container in our `ContentView`. It is worth noticing that the `padding` modifier applied to content will be applied to both `Image` and `Text` 
 
+# Day 24
+Today, three challenges await us. We have to modify our previous projects with what we learnt yesterday
+
+## WeSplit with conditional modifier
+The first challenge is changing the color of the totals in WeSplit. We want a red tint when we select a 0% for tip. 
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var checkAmount = 0.0
+    @State private var numberOfPeople = 2
+    @State private var tipPercentage = 20
+    @FocusState private var amountIsFocused: Bool
+    
+    //let tipPercenteges = [10, 15, 20, 25, 0]
+
+    private var peopleCount: Double {
+        Double(numberOfPeople + 2)
+    }
+    
+    private var grandTotal: Double {
+        let tipSelection = Double(tipPercentage)
+        let tipValue = checkAmount / 100 * tipSelection
+        let grandTotal = checkAmount + tipValue
+        
+        return grandTotal
+    }
+    
+    private var totalPerPerson: Double {
+        let amountPerPerson = grandTotal / peopleCount
+        
+        return amountPerPerson
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Amount", value: $checkAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .keyboardType(.decimalPad)
+                        .focused($amountIsFocused)
+                    
+                    Picker("Number of people", selection: $numberOfPeople) {
+                        ForEach(2..<100) {
+                            Text("\($0) people")
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                    
+                }
+                
+                Section("How much do you want to tip") {
+                    Picker("Tip percentage", selection: $tipPercentage) {
+                        ForEach(0..<101, id: \.self) {
+                            Text($0, format: .percent)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+                
+                Section("Grand total") {
+                    Text(grandTotal, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .foregroundStyle(tipPercentage == 0 ? .red : .primary)
+                }
+                
+                Section("Total per person") {
+                    Text(totalPerPerson, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))
+                        .foregroundStyle(tipPercentage == 0 ? .red : .primary)
+                }
+            }
+            .navigationTitle("WeSplit")
+            .toolbar {
+                if amountIsFocused {
+                    Button("Done") {
+                        amountIsFocused = false
+                    }
+                }
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+![WeSplit with red text for totals when tip percentage is zero](/assets/images/2024-06-20-100-days-of-swiftui/weSplitConditionalModifier.png)
+
+## Custom view for flag image in GuessTheFlag
+The second challenge is creating a `FlagImage` struct to represent our flag images with the several modifier to make it fancy.
+
+{% highlight swift %}
+struct FlagImage: View {
+    let country: String
+    
+    var body: some View {
+        Image(country)
+            .clipShape(.capsule)
+            .shadow(radius: 5)
+    }
+}
+
+struct ContentView: View {
+    @State var countries = ["Estonia", "France", "Germany", "Ireland", "Italy", "Nigeria", "Poland", "Spain", "UK", "Ukraine", "US"].shuffled()
+    @State var correctAnswer = Int.random(in: 0...2)
+    
+    @State private var showingScore = false
+    @State private var scoreTitle = ""
+    @State private var wrongAnswer: Int? = nil
+    
+    @State private var score = 0
+    @State private var attempts = 8
+    @State private var showingFinalResutl = false
+    
+    var body: some View {
+        ZStack {
+            RadialGradient(stops: [
+                .init(color: Color(red: 0.1, green: 0.2, blue: 0.45), location: 0.3),
+                .init(color: Color(red: 0.76, green: 0.15, blue: 0.26), location: 0.3)
+            ], center: .top, startRadius: 200, endRadius: 700)
+                .ignoresSafeArea()
+            
+            VStack {
+                Spacer()
+                
+                Text("Guess the flag")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                VStack(spacing: 15) {
+                    VStack {
+                        Text("Tap the flag of")
+                            .foregroundStyle(.secondary)
+                            .font(.subheadline.weight(.heavy))
+                        
+                        Text(countries[correctAnswer])
+                            .font(.largeTitle.weight(.semibold))
+                    }
+                    
+                    ForEach(0..<3) { number in
+                        Button {
+                            flagTapped(number)
+                        } label: {
+                            FlagImage(country: countries[number])
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .background(.regularMaterial)
+                .clipShape(.rect(cornerSize: CGSize(width: 20, height: 20)))
+                
+                Spacer()
+                Spacer()
+                
+                Text("Score: \(score)")
+                    .foregroundStyle(.white)
+                    .font(.title.bold())
+                
+                Text("Remaining questions: \(attempts)")
+                    .foregroundStyle(.white)
+                    .font(.subheadline)
+                
+                Spacer()
+            }
+            .padding()
+        }
+        .alert(scoreTitle, isPresented: $showingScore) {
+            Button("Continue", action: askQuestion)
+        } message: {
+            if let wrongAnswer = wrongAnswer {
+                Text("Wrong, that is the flag of \(countries[wrongAnswer])")
+            }
+            Text("Your score is \(score)")
+        }
+        .alert("Game over", isPresented: $showingFinalResutl) {
+            Button("Restart", action: restart)
+        } message: {
+            Text("Your final score is \(score)")
+        }
+    }
+    
+    func flagTapped(_ number: Int) {
+        if number == correctAnswer {
+            scoreTitle = "Correct"
+            score += 1
+        } else {
+            scoreTitle = "Wrong"
+            wrongAnswer = number
+            score -= 1
+        }
+        
+        attempts -= 1
+        if attempts == 0 {
+            showingFinalResutl = true
+        } else {
+            showingScore = true
+        }
+    }
+    
+    func askQuestion() {
+        countries.shuffle()
+        correctAnswer = Int.random(in: 0...2)
+        wrongAnswer = nil
+    }
+    
+    func restart() {
+        score = 0
+        attempts = 8
+        askQuestion()
+    }
+}
+{% endhighlight %}
+
+## Custom modifier for a large blue title
+Last challenge is creating a custom modifier to create a large blue view.
+
+{% highlight swift %}
+struct LargeBlue: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.largeTitle)
+            .foregroundStyle(.blue)
+    }
+}
+
+extension View {
+    func largeBlue() -> some View {
+        modifier(LargeBlue())
+    }
+}
+
+struct ContentView: View {
+    var body: some View {
+        Text("Hello World!")
+            .largeBlue()
+    }
+}
+{% endhighlight%}
+
+![Large blue title built with a custom modifier](/assets/images/2024-06-20-100-days-of-swiftui/largeBlueTitle.png)
