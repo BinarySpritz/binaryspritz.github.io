@@ -47,7 +47,8 @@ Index:
 - [Day 21](#day-21): GuessTheFlag part 2/3
 - [Day 22](#day-22): GuessTheFlag part 3/3
 - [Day 23](#day-23): more details on view and modifier
-- [Day 24](#day-24): challenges with details learnt during day 23
+- [Day 24](#day-24): challenges with details learned during day 23
+- [Day 25](#day-25): RockPaperScissors, a new app made with everything learned so far
 
 
 # Day 1
@@ -1190,7 +1191,7 @@ func f(a: [Int]?) -> Int{
 {% endhighlight %}
 
 # Day 15
-Today has been dedicated to a recap of the foundamentals learnt so far. Nothing new has been added. From tomorrow we move into SwiftUI and app development.
+Today has been dedicated to a recap of the foundamentals learned so far. Nothing new has been added. From tomorrow we move into SwiftUI and app development.
 
 # Day 16
 Today we start iOS app development with a running example. WeSplit is an app that allows to split the cost of a launch or a dinner among people.
@@ -2366,7 +2367,7 @@ There are a couple of things which are worthy to notice:
 2. `@ViewBuilder` means that the resulting view will be build taking into consideration every declared element. That is important because we can avoid to embedd the `Image` and the `Text` inside a container in our `ContentView`. It is worth noticing that the `padding` modifier applied to content will be applied to both `Image` and `Text` 
 
 # Day 24
-Today, three challenges await us. We have to modify our previous projects with what we learnt yesterday
+Today, three challenges await us. We have to modify our previous projects with what we learned yesterday
 
 ## WeSplit with conditional modifier
 The first challenge is changing the color of the totals in WeSplit. We want a red tint when we select a 0% for tip. 
@@ -2604,3 +2605,242 @@ struct ContentView: View {
 {% endhighlight%}
 
 ![Large blue title built with a custom modifier](/assets/images/2024-06-20-100-days-of-swiftui/largeBlueTitle.png)
+
+# Day 25
+Recap day. Today we consolidate what we learned so far and add some small bits to it.
+
+## Custom bindings
+We have seen how bindings works (`$varName`). What SwiftUi is creating a `Binding` object for us which bheaviour is the following
+
+{% highlight swift %}
+struct ContentView: View {
+    @State var myVar = 0
+
+    var body: some View {
+        let binding = Binding(
+            get: { myVar },
+            set: { myVar = $0 }
+        )
+
+        return TextField("Input", value: binding)
+    }
+}
+{% endhighlight %}
+
+## Challenge - RockPaperScissors
+The 25th day challenge is a rock-paper-scissors game. The task are:
+- Each turn the CPU randomly choose between the three options
+- Then the player tap on their choose
+- An alert show if they won or loose
+- The score is stored. A win is a +1 and a loose is a -1
+- The game lasts for 10 rounds. Then the final score is shown and everything resets
+
+{% highlight swift %}
+enum Symbol {
+    case rock, paper, scissors
+    
+    var symbolString: String {
+        switch self {
+        case .rock:
+            "Rock"
+        case .paper:
+            "Paper"
+        case .scissors:
+            "Scissors"
+        }
+    }
+}
+
+extension Symbol: Comparable {
+    static func < (lhs: Symbol, rhs: Symbol) -> Bool {
+        switch lhs {
+        case .rock:
+            switch rhs {
+            case .rock:
+                true
+            case .paper:
+                true
+            case .scissors:
+                false
+            }
+        case .paper:
+            switch rhs {
+            case .rock:
+                false
+            case .paper:
+                true
+            case .scissors:
+                true
+            }
+        case .scissors:
+            switch rhs {
+            case .rock:
+                true
+            case .paper:
+                false
+            case .scissors:
+                true
+            }
+        }
+    }
+    
+    static func == (lhs: Symbol, rhs: Symbol) -> Bool {
+        return lhs.hashValue == rhs.hashValue
+    }
+}
+
+struct SymbolModifier: ViewModifier {
+    let symbol: Symbol
+    
+    private var symbolBackground: Color {
+        switch symbol {
+        case .rock:
+                .brown
+        case .paper:
+                .yellow
+        case .scissors:
+                .gray
+        }
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .padding()
+            .background(symbolBackground)
+            .foregroundStyle(.white)
+            .clipShape(.rect(cornerRadius: 20))
+    }
+}
+
+extension View {
+    func setSymbol(_ symbol: Symbol) -> some View{
+        modifier(SymbolModifier(symbol: symbol))
+    }
+}
+
+struct ContentView: View {
+    let symbols: [Symbol] = [.paper, .rock, .scissors]
+    
+    @State private var cpuChoice: Symbol = [.paper, .rock, .scissors][Int.random(in: 0...2)]
+    @State private var score = 0
+    @State private var userPicked = false
+    @State private var roundMessage = ""
+    @State private var isRoundFinished = false
+    @State private var attempsRemainig = 10
+    @State private var isShowingGameFinished = false
+    
+    func symbolTapped(_ symbol: Symbol) {
+        userPicked = true
+        
+        if symbol > cpuChoice {
+            score += 1
+            roundMessage = "You won"
+        } else if symbol == cpuChoice {
+            roundMessage = "Tie"
+        } else {
+            score -= 1
+            roundMessage = "You loose"
+        }
+        
+        attempsRemainig -= 1
+        
+        if attempsRemainig == 0 {
+            isShowingGameFinished = true
+        } else {
+            isRoundFinished = true
+        }
+    }
+    
+    func resetRound() {
+        userPicked = false
+        cpuChoice = symbols[Int.random(in: 0...2)]
+    }
+    
+    func resetGame() {
+        attempsRemainig = 10
+        resetRound()
+    }
+    
+    var body: some View {
+        VStack {
+            Text("Rock-Paper-Scissors")
+                .font(.largeTitle)
+            
+            Spacer()
+            
+            HStack {
+                Text("CPU choose: ")
+                if userPicked {
+                    Text(cpuChoice.symbolString)
+                        .setSymbol(cpuChoice)
+                        
+                } else {
+                    Text("Hidden")
+                        .padding()
+                        .clipShape(.rect(cornerRadius: 20))
+                        .blur(radius: 3.0)
+                }
+            }
+            
+            HStack {
+                Button("Rock") {
+                    symbolTapped(.rock)
+                }
+                .setSymbol(.rock)
+                
+                Button("Paper") {
+                    symbolTapped(.paper)
+                }
+                .setSymbol(.paper)
+                
+                Button("Scissors") {
+                    symbolTapped(.scissors)
+                }
+                .setSymbol(.scissors)
+            }
+            .disabled(isRoundFinished)
+            
+            Button("Next round") {
+                isRoundFinished = false
+                resetRound()
+            }
+            .padding()
+            .disabled(!isRoundFinished)
+            
+            Spacer()
+            
+            if isRoundFinished {
+                Text(roundMessage)
+            }
+            
+            Text("Score: \(score)")
+                .font(.title)
+            
+            Text("Round remaining: \(attempsRemainig)")
+                .font(.subheadline)
+        }
+        .alert("Game over", isPresented: $isShowingGameFinished) {
+            Button("Restart") {
+                isShowingGameFinished = false
+                resetGame()
+            }
+        } message: {
+            Text("Your score is: \(score)")
+        }
+    }
+}
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img id="RockPaperScissors" src="/assets/images/2024-06-20-100-days-of-swiftui/rockPaperScissorsA.png" alt="Initial view of RockPaperScissors">
+    <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('RockPaperScissors', '/assets/images/2024-06-20-100-days-of-swiftui/rockPaperScissorsA.png', 'Initial view of RockPaperScissors')">1</button>
+        <button onclick="changeImage('RockPaperScissors', '/assets/images/2024-06-20-100-days-of-swiftui/rockPaperScissorsB.png', 'Loose state of RockPaperScissors')">2</button>
+        <button onclick="changeImage('RockPaperScissors', '/assets/images/2024-06-20-100-days-of-swiftui/rockPaperScissorsC.png', 'Winning state of RockPaperScissors')">3</button>
+        <button onclick="changeImage('RockPaperScissors', '/assets/images/2024-06-20-100-days-of-swiftui/rockPaperScissorsD.png', 'Game over state of RockPaperScissors')">4</button>
+    </div>
+</div>
+
+
+My solution is, maybe. a bit overpower. I wanted to just test if a symbol (rock, paper, and scissors) is greater than another to see who won. To do it in this way I implemented the protocol `Comparable` for the `Symbol` enum.
+
