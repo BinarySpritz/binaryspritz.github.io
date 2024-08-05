@@ -49,6 +49,7 @@ Index:
 - [Day 23](#day-23): more details on view and modifier
 - [Day 24](#day-24): challenges with details learned during day 23
 - [Day 25](#day-25): RockPaperScissors, a new app made with everything learned so far
+- [Day 26](#day-26): BetterRest part 1
 
 
 # Day 1
@@ -2844,3 +2845,38 @@ struct ContentView: View {
 
 My solution is, maybe. a bit overpower. I wanted to just test if a symbol (rock, paper, and scissors) is greater than another to see who won. To do it in this way I implemented the protocol `Comparable` for the `Symbol` enum.
 
+# Day 26
+Today we start a new project. An app which uses machine learning (ML) to suggeest at what time the user should go to sleep given some inputs. Before entering the ML world in Swift with CoreML we have to setup our app user interface.
+
+## Stepper
+Stepper is a new graphical element which allows the user to input a number incrementing or decrementing it. The following code will generete a stepper binded to `sleepAmount`, which can range between `4` and `12`, and each step is `0.25`.
+
+{% highlight swift %}
+Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+{% endhighlight %}
+
+## DatePicker
+Another element is the usefull to let the user select a date and/or time. 
+
+{% highlight swift %}
+DatePicker("Please enter your date", selection: $wakeUp, displayedComponents: .hourAndMinute)
+{% endhighlight %}
+
+We can also add a range in between the date can be selected. And the range can also be an open range (to select only future or past date for example)
+
+{% highlight swift %}
+DatePicker("Please enter your date", selection: $wakeUp, in: Date.now...) // Only future date
+DatePicker("Please enter your date", selection: $wakeUp, in: ...Date.now) // Only past date
+{% endhighlight %}
+
+### Date components
+It is worth deeping dive into date components (`DateComponent()` objects). They are objects holding info about `hours`, `minutes`, etc. etc. inside a date. They can be used to build a date from scratch `Calendar.current.date(from: component)` or can be retrieved from a date (as optional value) `Calendar.current.dateComponent([.hour, .minutes], from: .now).hour`.
+
+## Create the ML model
+Our app will predict the time at which the user should go to sleep with a ML model. First of all, we want to create such model to be used later in our app.
+
+To create a ML model for CoreML we can use CreateML, a MacOS app that let us to create ML models through a graphical user interface. 
+
+It let us to choose among many types of ML models. We are interested in a `Tabular regression` because from a dataset in a tabular form we want to forecast a value. Then we setup our parameters (input dataset, target value, features, ...) and finally, we just click the `Train` button.
+
+What we get from CreateML is a `.mlmodel` file that can be used in our iOS app.
