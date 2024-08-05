@@ -49,7 +49,8 @@ Index:
 - [Day 23](#day-23): more details on view and modifier
 - [Day 24](#day-24): challenges with details learned during day 23
 - [Day 25](#day-25): RockPaperScissors, a new app made with everything learned so far
-- [Day 26](#day-26): BetterRest part 1
+- [Day 26](#day-26): BetterRest part 1/3
+- [Day 27](#day-27): BetterRest part 2/3
 
 
 # Day 1
@@ -2880,3 +2881,134 @@ To create a ML model for CoreML we can use CreateML, a MacOS app that let us to 
 It let us to choose among many types of ML models. We are interested in a `Tabular regression` because from a dataset in a tabular form we want to forecast a value. Then we setup our parameters (input dataset, target value, features, ...) and finally, we just click the `Train` button.
 
 What we get from CreateML is a `.mlmodel` file that can be used in our iOS app.
+
+# Day 27
+Today we use our ML model in the BetterRest app. It is very simple: 
+
+1. Import the `.mlmodel` file into our project 
+2. Reference it as any other Swift class 
+
+Behind the courtain, XCode automatically creates a class for each model in our project. 
+
+Using this class is very simple:
+
+1. Create a variable holding some configuration (it can be empty)
+2. Create an instance of our model passing the configuration
+3. Call the method `.prediction` and pass the input data necessary for the model
+
+In our BetterRest app, we do a bunch of stuff on top of the three points to parse the dates and showing an alert. It works in this way:
+
+{% highlight swift %}
+import MLCore
+
+func calculateBedTime() {
+    do {
+        let config = MLModelConfiguration()
+        let model = try SleepCalculator(configuration: config)
+        
+        let components = Calendar.current.dateComponents([.hour, .minute], from: wakeUp)
+        let hour = (components.hour ?? 0) * 60 * 60
+        let minute = (components.minute ?? 0) * 60
+        
+        let prediction = try model.prediction(wake: Double(hour + minute), estimatedSleep: sleepAmount, coffee: Double(coffeeAmount))
+        
+        let sleepTime = wakeUp - prediction.actualSleep
+        alertTitle = "Your ideal bedtime is..."
+        alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
+    } catch {
+        alertTitle = "Error"
+        alertMessage = "Sorry, there was a problem calculating your bedtime"
+    }
+    
+    showingAlert = true
+}
+{% endhighlight %}
+
+
+After improving the user expierence and the user interface the final result is:
+
+{% highlight swift %}
+import CoreML
+import SwiftUI
+
+struct ContentView: View {
+    @State private var sleepAmount = 8.0
+    @State private var wakeUp = defaultWakeupTime
+    @State private var coffeeAmount = 1
+    
+    @State private var alertTitle = ""
+    @State private var alertMessage = ""
+    @State private var showingAlert = false
+    
+    static var defaultWakeupTime: Date {
+        var components = DateComponents()
+        components.hour = 7
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? .now
+    }
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("When do you want to wake up?")
+                        .font(.headline)
+                    DatePicker("Please enter your date", selection: $wakeUp, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                }
+                
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Desired amount of sleep")
+                        .font(.headline)
+                    Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+                }
+                
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("How much coffee do you drink?")
+                        .font(.headline)
+                    Stepper("^[\(coffeeAmount) cups](inflect: true)", value: $coffeeAmount, in: 1...20)
+                }
+            }
+            .navigationTitle("BetterRest")
+            .toolbar {
+                Button("Calculate", action: calculateBedTime)
+            }
+            .alert(alertTitle, isPresented: $showingAlert) {
+                Button("Ok") {}
+            } message: {
+                Text(alertMessage)
+            }
+        }
+    }
+    
+    func calculateBedTime() {
+        do {
+            let config = MLModelConfiguration()
+            let model = try SleepCalculator(configuration: config)
+            
+            let components = Calendar.current.dateComponents([.hour, .minute], from: wakeUp)
+            let hour = (components.hour ?? 0) * 60 * 60
+            let minute = (components.minute ?? 0) * 60
+            
+            let prediction = try model.prediction(wake: Double(hour + minute), estimatedSleep: sleepAmount, coffee: Double(coffeeAmount))
+            
+            let sleepTime = wakeUp - prediction.actualSleep
+            alertTitle = "Your ideal bedtime is..."
+            alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
+        } catch {
+            alertTitle = "Error"
+            alertMessage = "Sorry, there was a problem calculating your bedtime"
+        }
+        
+        showingAlert = true
+    }
+}
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img id="BetterRest" src="/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1a.png" alt="BetterRest data input view">
+    <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1a.png', 'BetterRest data input view')">1</button>
+        <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1b.png', 'BetterRest prediction alert')">2</button>
+    </div>
+</div>
