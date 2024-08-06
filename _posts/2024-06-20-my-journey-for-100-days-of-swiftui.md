@@ -3008,7 +3008,7 @@ struct ContentView: View {
 <div style="max-width: 100%;">
     <img id="BetterRest" src="/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1a.png" alt="BetterRest data input view">
     <div style="display: flex; flex-direction: row; justify-content: space-evenly">
-        <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1a.png', 'BetterRest data input view')">1</button>
-        <button onclick="changeImage('GuessTheFlag', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1b.png', 'BetterRest prediction alert')">2</button>
+        <button onclick="changeImage('BetterRest', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1a.png', 'BetterRest data input view')">1</button>
+        <button onclick="changeImage('BetterRest', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1b.png', 'BetterRest prediction alert')">2</button>
     </div>
 </div>
