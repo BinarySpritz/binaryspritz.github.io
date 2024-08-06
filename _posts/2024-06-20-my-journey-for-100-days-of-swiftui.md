@@ -51,6 +51,7 @@ Index:
 - [Day 25](#day-25): RockPaperScissors, a new app made with everything learned so far
 - [Day 26](#day-26): BetterRest part 1/3
 - [Day 27](#day-27): BetterRest part 2/3
+- [Day 28](#day-28): BetterRest part 3/3
 
 
 # Day 1
@@ -3010,5 +3011,116 @@ struct ContentView: View {
     <div style="display: flex; flex-direction: row; justify-content: space-evenly">
         <button onclick="changeImage('BetterRest', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1a.png', 'BetterRest data input view')">1</button>
         <button onclick="changeImage('BetterRest', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV1b.png', 'BetterRest prediction alert')">2</button>
+    </div>
+</div>
+
+# Day 28
+Today, we have three things to do to improve BetterRest:
+
+1. Replace the `VStack`s with `Section`s
+2. Replace the `Stepper` to select the number of cups of coffee with a `Picker`
+3. Remove the calculate `Button` and automatically show the predicted bedtime
+
+It is worth noticing that this new layout works great also with the dark mode activated (see image 4).
+
+{% highlight swift %}
+import CoreML
+import SwiftUI
+
+struct ContentView: View {
+    @State private var sleepAmount = 8.0
+    @State private var wakeUp = defaultWakeupTime
+    @State private var coffeeAmountIndex = 0
+    private var coffeeAmount: Int {
+        coffeeAmountIndex + 1
+    }
+    
+    
+    @State private var alertTitle = ""
+    @State private var alertMessage = ""
+    @State private var showingAlert = false
+    
+    private var bedTime: Date? {
+        do {
+            let config = MLModelConfiguration()
+            let model = try SleepCalculator(configuration: config)
+            
+            let components = Calendar.current.dateComponents([.hour, .minute], from: wakeUp)
+            let hour = (components.hour ?? 0) * 60 * 60
+            let minute = (components.minute ?? 0) * 60
+            
+            let prediction = try model.prediction(wake: Double(hour + minute), estimatedSleep: sleepAmount, coffee: Double(coffeeAmount))
+            
+            let sleepTime = wakeUp - prediction.actualSleep
+            return sleepTime
+        } catch {
+            showingAlert = true
+            alertTitle = "Error"
+            alertMessage = "Sorry, there was a problem calculating your bedtime"
+            return nil
+        }
+    }
+    
+    static var defaultWakeupTime: Date {
+        var components = DateComponents()
+        components.hour = 7
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? .now
+    }
+    
+    var body: some View {
+        NavigationStack {
+            VStack {
+                Form {
+                    Section("When do you want to wake up?") {
+                        DatePicker("Wakeup time", selection: $wakeUp, displayedComponents: .hourAndMinute)
+                    }
+                    
+                    Section("Desired amount of sleep") {
+                        Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+                    }
+                    
+                    Section("How much coffee do you drink?") {
+                        Picker("Number of cups", selection: $coffeeAmountIndex) {
+                            ForEach(1..<21) {
+                                Text("\($0)")
+                            }
+                        }
+                    }
+                }
+                
+                ZStack {
+                    RoundedRectangle(cornerRadius: 25)
+                        .fill(.fill)
+                    
+                    VStack {
+                        Text("Your bedtime is...")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text("\(bedTime?.formatted(date: .omitted, time: .shortened) ?? "?")")
+                            .font(.title)
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .padding(20)
+            }
+            .navigationTitle("BetterRest")
+            .alert(alertTitle, isPresented: $showingAlert) {
+                Button("Ok") {}
+            } message: {
+                Text(alertMessage)
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img id="BetterRestV2" src="/assets/images/2024-06-20-100-days-of-swiftui/betterRestV2a.png" alt="BetterRest data input view">
+    <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('BetterRestV2', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV2a.png', 'BetterRest view with both data input and prediction')">1</button>
+        <button onclick="changeImage('BetterRestV2', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV2b.png', 'BetterRest focus on the wakeup time selector')">2</button>
+        <button onclick="changeImage('BetterRestV2', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV2c.png', 'BetterRest focus on the cups selector')">3</button>
+        <button onclick="changeImage('BetterRestV2', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV2d.png', 'BetterRest view in dark mode')">4</button>
     </div>
 </div>
