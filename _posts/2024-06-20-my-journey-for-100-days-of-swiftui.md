@@ -52,6 +52,7 @@ Index:
 - [Day 26](#day-26): BetterRest part 1/3
 - [Day 27](#day-27): BetterRest part 2/3
 - [Day 28](#day-28): BetterRest part 3/3
+- [Day 29](#day-29): WordScramble part 1/3 (`List`)
 
 
 # Day 1
@@ -3124,3 +3125,59 @@ struct ContentView: View {
         <button onclick="changeImage('BetterRestV2', '/assets/images/2024-06-20-100-days-of-swiftui/betterRestV2d.png', 'BetterRest view in dark mode')">4</button>
     </div>
 </div>
+
+# Day 29
+New day, new project: the WordScramble app presents a word to the user which has to find other words inside it.
+
+Maybe more important than the app itself, there is a new graphical element: `List`. It allows to present (in both static and dynamic way) some content to the user in a list view. If you think about it, almost every app you use everyday has at least one list inside it.
+
+## List
+A `List` is similar to a `Form` (at least its basic functions) with the possibility to create it from a array:
+
+{% highlight swift %}
+struct ContentView: View {
+    let people = ["Finn", "Mark", "Luke", "Duke"]
+    
+    var body: some View {
+        List(people, id: \.self) {
+           Text("Hey \($0)!")
+        }
+    }
+}
+{% endhighlight %}
+
+![List view with four rows generated from the the four names in the people array](/assets/images/2024-06-20-100-days-of-swiftui/listView.png)
+
+## Bundle
+Every app lives inside a container and, usually, every app uses some static files (no source code). To access those files we have to get the file path where our app is located. We don't want (and can't) try decoding the actual path to our directory. Apple gives us an access to them through the `Bundle` class.
+
+{% highlight swift %}
+func testBundles() {
+        if let fileURL = Bundle.main.url(forResource: "someFile", withExtension: "txt") {
+            // File found
+            
+            if let fileContent = try? String(contentsOf: fileURL) {
+                // File content is into fileContent
+            }
+        }
+    }
+{% endhighlight %}
+
+## String utils
+In this project we are going to work with strings. We already saw some methods for strings but, for this instance the next one will come in handy:
+
+- `.components(separatedBy: )` return a list of strings each one was separated by some other string in the initial string
+- `.trimmingCharacters(in: )` return a string without the characters passed as input
+
+In addition, we will use the iOS' spellchecker. It is an "old" piece of code written in Objective-C and it uses some nasty types. I leave here the example:
+
+{% highlight swift %}
+let word = "Swift"
+let checker = UITextChecker()
+
+let range = NSRange(location: 0, length: word.utf16.count)
+
+let mispelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en") // No optional because from Objective-C
+
+let allGood = mispelledRange.location == NSNotFound
+{% endhighlight %}
