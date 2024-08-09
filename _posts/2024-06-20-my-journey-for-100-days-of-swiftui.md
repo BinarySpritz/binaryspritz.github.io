@@ -53,6 +53,7 @@ Index:
 - [Day 27](#day-27): BetterRest part 2/3
 - [Day 28](#day-28): BetterRest part 3/3
 - [Day 29](#day-29): WordScramble part 1/3 (`List`)
+- [Day 30](#day-30): WordScramble part 2/3
 
 
 # Day 1
@@ -3180,4 +3181,191 @@ let range = NSRange(location: 0, length: word.utf16.count)
 let mispelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en") // No optional because from Objective-C
 
 let allGood = mispelledRange.location == NSNotFound
+{% endhighlight %}
+
+# Day 30
+We start building the user interface for our new app. First of all we declare a `List` with two `Section`s. The first one is a static row with an input field for the new words user can insert, and the second one is the dynamic part with rows which replicate what the user added. We also add an action when the user press the submit key on a keyboard defining the attribute `onSubmit` and passing an action to add a word. Moreover, when we add a new word, we embrace the `.insert` method inside a `withAnimation` method, This creates the animation of insertion automatically for us. 
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var usedWords: [String] = []
+    @State private var rootWord = ""
+    @State private var newWord = ""
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    TextField("Enter your word", text: $newWord)
+                        .textInputAutocapitalization(.never)
+                }
+                
+                Section {
+                    ForEach(usedWords, id: \.self) {word in
+                        HStack {
+                            Image(systemName: "\(word.count).circle")
+                            Text(word)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(rootWord)
+            .onSubmit(addNewWord)
+        }
+    }
+    
+    
+    func addNewWord() {
+        let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard answer.count > 0 else {return}
+        
+        withAnimation {
+            usedWords.insert(answer, at: 0)
+        }
+        newWord = ""
+    }    
+}
+{% endhighlight %}
+
+![Animation when inserting two words in WordScramble](/assets/images/2024-06-20-100-days-of-swiftui/wordScrambleListAnimation.gif)
+
+## Load file from bundle at startup
+We want to load a txt file from our bundle at the startup of our app. We saw yeaterday how to read files from our app's bundle and today we put that in practice:
+
+{% highlight swift %}
+func startGame() {
+    if let startWordURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
+        if let startWords = try? String(contentsOf: startWordURL) {
+            let allWordsArray = startWords.components(separatedBy: .newlines)
+            rootWord = allWordsArray.randomElement()!
+            return
+        }
+    }
+    
+    fatalError("Could not load start.txt from bundle")
+}
+{% endhighlight %}
+
+To execute this method when our view appear we can add another attribute to our `List` view: `.onAppear(perform: startGame)`.
+
+## Word validation
+Next step is validate words give by the user. We have to check three conditions:
+1. is a new word (i.e. not already added)
+2. is a word made of letters from the root word
+3. is a real word from the english dictionary
+
+We write a method for each check plus an utility method to show an error message if something fails and we add the checks before adding the new word.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var usedWords: [String] = []
+    @State private var rootWord = ""
+    @State private var newWord = ""
+    
+    @State private var errorTitle = ""
+    @State private var errorMessage = ""
+    @State private var showingError = false
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    TextField("Enter your word", text: $newWord)
+                        .textInputAutocapitalization(.never)
+                }
+                
+                Section {
+                    ForEach(usedWords, id: \.self) {word in
+                        HStack {
+                            Image(systemName: "\(word.count).circle")
+                            Text(word)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(rootWord)
+            .onSubmit(addNewWord)
+            .onAppear(perform: startGame)
+            .alert(errorTitle, isPresented: $showingError) {
+                Button("Ok") {}
+            } message: {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    
+    func addNewWord() {
+        let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard answer.count > 0 else {return}
+        
+        guard isOriginal(word: answer) else {
+            wordError(title: "Word used already", message: "Be more original!")
+            return
+        }
+        
+        guard isPossible(word: answer) else {
+            wordError(title: "Word not possible", message: "You can't spell that word from \(rootWord)!")
+            return
+        }
+        
+        guard isReal(word: answer) else {
+            wordError(title: "Word not recognized", message: "You can't just make them up, you know!")
+            return
+        }
+        
+        withAnimation {
+            usedWords.insert(answer, at: 0)
+        }
+        newWord = ""
+    }
+    
+    func startGame() {
+        if let startWordURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
+            if let startWords = try? String(contentsOf: startWordURL) {
+                let allWordsArray = startWords.components(separatedBy: .newlines)
+                rootWord = allWordsArray.randomElement()!
+                return
+            }
+        }
+        
+        fatalError("Could not load start.txt from bundle")
+    }
+    
+    func isOriginal(word: String) -> Bool {
+        !usedWords.contains(word)
+    }
+    
+    func isPossible(word: String) -> Bool {
+        var tmpWord = rootWord
+        
+        for letter in word {
+            if let pos = tmpWord.firstIndex(of: letter) {
+                tmpWord.remove(at: pos)
+            } else {
+                return false
+            }
+        }
+        
+        return true
+    }
+    
+    func isReal(word: String) -> Bool {
+        let checker = UITextChecker()
+        
+        let range = NSRange(location: 0, length: word.utf16.count)
+        
+        let mispelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
+        
+        return mispelledRange.location == NSNotFound
+    }
+    
+    func wordError(title: String, message: String) {
+        errorTitle = title
+        errorMessage = message
+        showingError = true
+    }
+}
 {% endhighlight %}
