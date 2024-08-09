@@ -54,6 +54,7 @@ Index:
 - [Day 28](#day-28): BetterRest part 3/3
 - [Day 29](#day-29): WordScramble part 1/3 (`List`)
 - [Day 30](#day-30): WordScramble part 2/3
+- [Day 31](#day-31): WordScramble part 3/3
 
 
 # Day 1
@@ -3369,3 +3370,158 @@ struct ContentView: View {
     }
 }
 {% endhighlight %}
+
+# Day 31
+As always, at the end of a project, a small challenge is in front of us:
+
+1. Disallow answers shorter than three letters
+2. Add a restart button
+3. Compute a score/points
+
+These three challenges are nothing new:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var usedWords: [String] = []
+    @State private var rootWord = ""
+    @State private var newWord = ""
+    
+    @State private var errorTitle = ""
+    @State private var errorMessage = ""
+    @State private var showingError = false
+    
+    private var points: Int {
+        return usedWords.map { $0.count }.reduce(0) { partialResult, el in
+            partialResult + el
+        }
+    }
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    TextField("Enter your word", text: $newWord)
+                        .textInputAutocapitalization(.never)
+                }
+                
+                Section {
+                    ForEach(usedWords, id: \.self) {word in
+                        HStack {
+                            Image(systemName: "\(word.count).circle")
+                            Text(word)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(rootWord)
+            .onSubmit(addNewWord)
+            .onAppear(perform: startGame)
+            .alert(errorTitle, isPresented: $showingError) {
+                Button("Ok") {}
+            } message: {
+                Text(errorMessage)
+            }
+            .toolbar {
+                Button("Restart", action: startGame)
+            }
+            
+            ZStack {
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(.fill)
+                VStack {
+                    Text("Your score is")
+                        .font(.subheadline)
+                    Text("\(points)")
+                        .font(.title)
+                    
+                }
+            }
+        }
+    }
+    
+    
+    func addNewWord() {
+        let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard answer.count > 0 else {return}
+        
+        guard isLongEnough(word: answer, length: 3) else {
+            wordError(title: "Word is too short", message: "Think something more complex")
+            return
+        }
+        
+        guard isOriginal(word: answer) else {
+            wordError(title: "Word used already", message: "Be more original!")
+            return
+        }
+        
+        guard isPossible(word: answer) else {
+            wordError(title: "Word not possible", message: "You can't spell that word from \(rootWord)!")
+            return
+        }
+        
+        guard isReal(word: answer) else {
+            wordError(title: "Word not recognized", message: "You can't just make them up, you know!")
+            return
+        }
+        
+        withAnimation {
+            usedWords.insert(answer, at: 0)
+        }
+        newWord = ""
+    }
+    
+    func startGame() {
+        if let startWordURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
+            if let startWords = try? String(contentsOf: startWordURL) {
+                let allWordsArray = startWords.components(separatedBy: .newlines)
+                rootWord = allWordsArray.randomElement()!
+                return
+            }
+        }
+        
+        fatalError("Could not load start.txt from bundle")
+    }
+    
+    func isOriginal(word: String) -> Bool {
+        !usedWords.contains(word)
+    }
+    
+    func isPossible(word: String) -> Bool {
+        var tmpWord = rootWord
+        
+        for letter in word {
+            if let pos = tmpWord.firstIndex(of: letter) {
+                tmpWord.remove(at: pos)
+            } else {
+                return false
+            }
+        }
+        
+        return true
+    }
+    
+    func isReal(word: String) -> Bool {
+        let checker = UITextChecker()
+        
+        let range = NSRange(location: 0, length: word.utf16.count)
+        
+        let mispelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
+        
+        return mispelledRange.location == NSNotFound
+    }
+    
+    func isLongEnough(word: String, length: Int) -> Bool{
+        return word.count > length
+    }
+    
+    
+    func wordError(title: String, message: String) {
+        errorTitle = title
+        errorMessage = message
+        showingError = true
+    }
+}
+{% endhighlight %}
+
+![Final version of WordScrambre with the root word, the list of words found by the user and the points](/assets/images/2024-06-20-100-days-of-swiftui/wordScrambleV3.png)
