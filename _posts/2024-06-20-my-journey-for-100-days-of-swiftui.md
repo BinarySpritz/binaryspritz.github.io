@@ -55,6 +55,7 @@ Index:
 - [Day 29](#day-29): WordScramble part 1/3 (`List`)
 - [Day 30](#day-30): WordScramble part 2/3
 - [Day 31](#day-31): WordScramble part 3/3
+- [Day 32](#day-32): Animation in SwiftUI
 
 
 # Day 1
@@ -3525,3 +3526,123 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![Final version of WordScrambre with the root word, the list of words found by the user and the points](/assets/images/2024-06-20-100-days-of-swiftui/wordScrambleV3.png)
+
+# Day 32
+Today we start looking into animations.
+
+Thanks to SwiftUI we can automatically animate any element in a simple way
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var animationAmount = 1.0
+    
+    var body: some View {
+        Button("Tap me") {
+            animationAmount += 1
+        }
+        .padding(50)
+        .background(.red)
+        .foregroundStyle(.white)
+        .clipShape(.circle)
+        .scaleEffect(animationAmount) // Modifier
+        .blur(radius: (animationAmount-1) * 3) // Modifier
+        .animation(.default, value: animationAmount) // Applied to all modifiers
+    }
+}
+{% endhighlight %}
+
+This snippet of code creates a button and define a `State` property (`animationAmount`) which is used in two modifier: `scaleEffect` and `.blur`. The `,animation` property listen for changes in `animationAmount` and automatically creates an animation for us. The change happens when the user tap on the button (`animation += 1`).
+
+![Gif of the execution of the previous code. A button is getting bigger and more blurred at each tap through an automatic animation](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation1.gif)
+
+We can make even more complex animations adding modifiers to our `.animation`'s style:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var animationAmount = 1.0
+    
+    var body: some View {
+        Button("Tap me") {
+            
+        }
+        .padding(50)
+        .background(.red)
+        .foregroundStyle(.white)
+        .clipShape(.circle)
+        .overlay(
+            Circle()
+                .stroke(.red)
+                .scaleEffect(animationAmount)
+                .opacity(2-animationAmount)
+                .animation(.easeOut(duration: 1)
+                                .repeatForever(autoreverses: false),
+                           value: animationAmount
+                )
+        )
+        .onAppear {
+            animationAmount = 2
+        }
+    }
+}
+{% endhighlight %}
+
+![Gif of the execution of the previous code. A circle is pulsing outside the circular button through an almost automatic animation](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation2.gif)
+
+
+## Animated bindings
+We can animate an element binding the property which trigger the animation to another element:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var animationAmount = 1.0
+    
+    var body: some View {
+        VStack {
+            Stepper("Scale amount", 
+                    value: $animationAmount.animation(
+                                .easeInOut(duration: 1)
+                                    .repeatCount(3)
+                            ),
+                    in: 1...10)
+            
+            Spacer()
+            
+            Button("Tap me") {
+                animationAmount += 1 // It will not trigger the animation
+            }
+            .padding(40)
+            .background(.red)
+            .foregroundStyle(.white)
+            .clipShape(.circle)
+            .scaleEffect(animationAmount)
+        }
+    }
+}
+{% endhighlight %}
+
+## Explicit animations
+We can also say which value changes we want to animate sourraunding the value change within the `withAnimation` method
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var animationAmount = 0.0
+    
+    var body: some View {
+        Button("Tap me") {
+            withAnimation(.spring(duration: 1, bounce: 0.5)) {
+                animationAmount += 360
+            }
+        }
+        .padding(50)
+        .background(.red)
+        .foregroundStyle(.white)
+        .clipShape(.circle)
+        .rotation3DEffect(
+            .degrees(animationAmount), 
+            axis: (x: 0.0, y: 1.0, z: 0.0)
+        )
+    }
+}
+{% endhighlight %}
+
+![Gif of the execution of the previous code. A circel button is roating when pressed](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation3.gif)
