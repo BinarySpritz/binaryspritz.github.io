@@ -55,7 +55,8 @@ Index:
 - [Day 29](#day-29): WordScramble part 1/3 (`List`)
 - [Day 30](#day-30): WordScramble part 2/3
 - [Day 31](#day-31): WordScramble part 3/3
-
+- [Day 32](#day-32): Animation in SwiftUI 1
+- [Day 33](#day-33): Animation in SwiftUI 2
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -3525,3 +3526,274 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![Final version of WordScrambre with the root word, the list of words found by the user and the points](/assets/images/2024-06-20-100-days-of-swiftui/wordScrambleV3.png)
+
+# Day 32
+Today we start looking into animations.
+
+Thanks to SwiftUI we can automatically animate any element in a simple way
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var animationAmount = 1.0
+    
+    var body: some View {
+        Button("Tap me") {
+            animationAmount += 1
+        }
+        .padding(50)
+        .background(.red)
+        .foregroundStyle(.white)
+        .clipShape(.circle)
+        .scaleEffect(animationAmount) // Modifier
+        .blur(radius: (animationAmount-1) * 3) // Modifier
+        .animation(.default, value: animationAmount) // Applied to all modifiers
+    }
+}
+{% endhighlight %}
+
+This snippet of code creates a button and define a `State` property (`animationAmount`) which is used in two modifier: `scaleEffect` and `.blur`. The `,animation` property listen for changes in `animationAmount` and automatically creates an animation for us. The change happens when the user tap on the button (`animation += 1`).
+
+![Gif of the execution of the previous code. A button is getting bigger and more blurred at each tap through an automatic animation](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation1.gif)
+
+We can make even more complex animations adding modifiers to our `.animation`'s style:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var animationAmount = 1.0
+    
+    var body: some View {
+        Button("Tap me") {
+            
+        }
+        .padding(50)
+        .background(.red)
+        .foregroundStyle(.white)
+        .clipShape(.circle)
+        .overlay(
+            Circle()
+                .stroke(.red)
+                .scaleEffect(animationAmount)
+                .opacity(2-animationAmount)
+                .animation(.easeOut(duration: 1)
+                                .repeatForever(autoreverses: false),
+                           value: animationAmount
+                )
+        )
+        .onAppear {
+            animationAmount = 2
+        }
+    }
+}
+{% endhighlight %}
+
+![Gif of the execution of the previous code. A circle is pulsing outside the circular button through an almost automatic animation](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation2.gif)
+
+
+## Animated bindings
+We can animate an element binding the property which trigger the animation to another element:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var animationAmount = 1.0
+    
+    var body: some View {
+        VStack {
+            Stepper("Scale amount", 
+                    value: $animationAmount.animation(
+                                .easeInOut(duration: 1)
+                                    .repeatCount(3)
+                            ),
+                    in: 1...10)
+            
+            Spacer()
+            
+            Button("Tap me") {
+                animationAmount += 1 // It will not trigger the animation
+            }
+            .padding(40)
+            .background(.red)
+            .foregroundStyle(.white)
+            .clipShape(.circle)
+            .scaleEffect(animationAmount)
+        }
+    }
+}
+{% endhighlight %}
+
+## Explicit animations
+We can also say which value changes we want to animate sourraunding the value change within the `withAnimation` method
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var animationAmount = 0.0
+    
+    var body: some View {
+        Button("Tap me") {
+            withAnimation(.spring(duration: 1, bounce: 0.5)) {
+                animationAmount += 360
+            }
+        }
+        .padding(50)
+        .background(.red)
+        .foregroundStyle(.white)
+        .clipShape(.circle)
+        .rotation3DEffect(
+            .degrees(animationAmount), 
+            axis: (x: 0.0, y: 1.0, z: 0.0)
+        )
+    }
+}
+{% endhighlight %}
+
+![Gif of the execution of the previous code. A circle button is roating when pressed](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation3.gif)
+
+# Day 32
+We continue studying animation. Some days ago we learned that the order of modifiers matter. It is the same for the `.animation` modifier. It will animate only the other modifiers declared above it. This allow for a fine controll of the "animation stack". In the example below we apply two different kind of animation (a `.default` and a `.spring`) to two different modifiers:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var enabled = false
+    
+    var body: some View {
+        Button("Tap me") {
+            enabled.toggle()
+        }
+        .frame(width: 200, height: 200)
+        .background(enabled ? .blue : .red)
+        .foregroundStyle(.white)
+        .animation(.default, value: enabled) // Animates only modifiers before it
+        .clipShape(.rect(cornerRadius: enabled ? 60 : 0))
+        .animation(.spring(duration: 1, bounce: 0.9), value: enabled)
+    }
+}
+{% endhighlight %}
+
+We can even animate gestures (that's a bit of a foreshadow)
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var dragAmount = CGSize.zero
+    
+    var body: some View {
+        LinearGradient(colors: [.yellow, .red], startPoint: .topLeading, endPoint: .bottomTrailing)
+            .frame(width: 300, height: 200)
+            .clipShape(.rect(cornerRadius: 10))
+            .offset(dragAmount)
+            .gesture(DragGesture()
+                .onChanged { dragAmount = $0.translation }
+                .onEnded { _ in
+                    withAnimation(.bouncy) {
+                        dragAmount = .zero
+                    }
+                }
+            )
+    }
+}
+{% endhighlight%}
+
+![Gif of the execution of the previous code. A view which is dragged around the screen and bounce back when it is released](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation4.gif)
+
+We can create also quite complex animations:
+
+{% highlight swift %}
+struct ContentView: View {
+    let letters = Array("Hello World!")
+    
+    @State private var enabled = false
+    @State private var dragAmount = CGSize.zero
+    
+    var body: some View {
+        HStack(spacing:0) {
+            ForEach(0..<letters.count, id: \.self) {num in
+                    Text(String(letters[num]))
+                    .padding(5)
+                    .font(.title)
+                    .background(enabled ? .blue : .red)
+                    .offset(dragAmount)
+                    .animation(.linear.delay(Double(num) / 20), value: dragAmount)
+            }
+        }
+        .gesture(DragGesture()
+            .onChanged { dragAmount = $0.translation }
+            .onEnded{ _ in
+                dragAmount = .zero
+                enabled.toggle()
+            }
+        )
+    }
+}
+{% endhighlight %}
+
+![Gif of the execution of the previous code. A trail of characters which can be dragged around and go back to the original position when released](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation5.gif)
+
+We can also present our elements with some animation. By default we have a fade-in and fade-out but, we can specify the `.transition` modifier to tell SwiftUI how we want our view to appear:
+
+{% highlight swift %}
+struct ContentView: View {
+    
+    @State private var isShowingRed = false
+    
+    var body: some View {
+        VStack {
+            Button("Tap me!") {
+                withAnimation {
+                    isShowingRed.toggle()
+                }
+            }
+            
+            if isShowingRed {
+                Rectangle()
+                    .fill(.red)
+                    .frame(width: 200, height: 200)
+                    .transition(.scale)
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+![Gif of the execution of the previous code. A view appears and disapears following a conditional statement](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation6.gif)
+
+We can go further and create our own transition style. A transition style is an object of type `AnyTransition` and it uses `ViewModifier`s to specifiy the `active` and `identify` status.
+
+{% highlight swift %}
+struct CornerRotateModfier: ViewModifier {
+    let amount: Double
+    let anchor: UnitPoint
+    
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(amount), anchor: anchor)
+            .clipped()
+    }
+}
+
+extension AnyTransition {
+    static var pivot: AnyTransition {
+        .modifier(active: CornerRotateModfier(amount: -90, anchor: .topLeading), identity: CornerRotateModfier(amount: 0, anchor: .topLeading))
+    }
+}
+
+struct ContentView: View {
+    @State private var isShowingRed = false
+    
+    var body: some View {
+        VStack {
+            Button("Tap me!") {
+                withAnimation {
+                    isShowingRed.toggle()
+                }
+            }
+            
+            if isShowingRed {
+                Rectangle()
+                    .fill(.red)
+                    .frame(width: 200, height: 200)
+                    .transition(.pivot)
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+![Gif of the execution of the previous code. A view appears and disapears with a pivot effect](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation7.gif)
