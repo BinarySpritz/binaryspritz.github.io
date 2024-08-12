@@ -3647,7 +3647,7 @@ struct ContentView: View {
 
 ![Gif of the execution of the previous code. A circle button is roating when pressed](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation3.gif)
 
-# Day 32
+# Day 33
 We continue studying animation. Some days ago we learned that the order of modifiers matter. It is the same for the `.animation` modifier. It will animate only the other modifiers declared above it. This allow for a fine controll of the "animation stack". In the example below we apply two different kind of animation (a `.default` and a `.spring`) to two different modifiers:
 
 {% highlight swift %}
