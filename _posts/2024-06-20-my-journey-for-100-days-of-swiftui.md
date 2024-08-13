@@ -57,6 +57,7 @@ Index:
 - [Day 31](#day-31): WordScramble part 3/3
 - [Day 32](#day-32): Animation in SwiftUI 1
 - [Day 33](#day-33): Animation in SwiftUI 2
+- [Day 34](#day-34): Animation in SwiftUI 3
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -3797,3 +3798,60 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![Gif of the execution of the previous code. A view appears and disapears with a pivot effect](/assets/images/2024-06-20-100-days-of-swiftui/exampleAnimation7.gif)
+
+# Day 34
+As challenge, today, we add some animation to GuessTheFlag. We have to:
+
+1. Add a spinning effect to the selected flag
+2. Add a fading effect to the not choosen flags
+3. Add a scale-out effect to the not choosen flags
+
+To reach these targets we have to change our code from [day 22](#day-22). In particula we define three `State` property which contains the value for our animations:
+
+{% highlight swift %}
+@State private var spinningAnimationValue = [0.0, 0.0, 0.0]
+@State private var fadeAnimationValue = [1.0, 1.0, 1.0]
+@State private var scaleAnimationValue = [1.0, 1.0, 1.0]
+{% endhighlight %}
+
+I used an array to hold this information because values change based on which flag the user tap (`0`, `1`, or `3`)
+
+Then, we add some modifiers to our flag-buttons and change the correct value in our arrays:
+
+{% highlight swift %}
+ Button {
+    spinningAnimationValue[number] += 360
+    withAnimation {
+        fadeAnimationValue[(number + 1) % 3] = 0.25
+        fadeAnimationValue[(number + 2) % 3] = 0.25
+        
+        scaleAnimationValue[(number + 1) % 3] = 0.0
+        scaleAnimationValue[(number + 2) % 3] = 0.0
+    }
+    flagTapped(number)
+} label: {
+    Image(countries[number])
+        .clipShape(.capsule)
+        .shadow(radius: 5)
+        .rotation3DEffect(.degrees(spinningAnimationValue[number]), axis: (x: 0.0, y: 1.0, z: 0.0))
+        .opacity(fadeAnimationValue[number])
+        .scaleEffect(scaleAnimationValue[number])
+        .animation(.default, value: spinningAnimationValue[number])
+}
+{% endhighlight %}
+
+Finally we reset the values of `fadeAnimationValue` and `scaleAnimationValue` in the `askQuestion` method:
+
+{% highlight swift %}
+func askQuestion() {
+    countries.shuffle()
+    correctAnswer = Int.random(in: 0...2)
+    wrongAnswer = nil
+    fadeAnimationValue = [1.0, 1.0, 1.0]
+    scaleAnimationValue = [1.0, 1.0, 1.0]
+}
+{% endhighlight %}
+
+The final result is shown in the gif below.
+
+![GuessTheFlag app with animation for when the user tap on flags](/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagAnimated.gif)
