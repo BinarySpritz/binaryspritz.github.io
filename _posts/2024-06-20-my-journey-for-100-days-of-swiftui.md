@@ -23,7 +23,7 @@ In this blog post, I will log my journey in learning Swift and SwiftUI by follow
 
 There are two reasons for this diary to exist and be publicly available: first, to share my thoughts about the language and the framework, and second, as a review of the learning process proposed by "The 100 Days of Swift," which, as the title says, you have to follow for one hundred days. Moreover, as I am a person who already knows some programming languages, I was curious about how a new language is taught.
 
-Index:
+# Index:
 - [Day 1](#day-1): variables and constants part 1/2
 - [Day 2](#day-2): variables and constants part 2/2 and string interpolation
 - [Day 3](#day-3): arrays, dictionaries, enums, 
@@ -58,6 +58,7 @@ Index:
 - [Day 32](#day-32): Animation in SwiftUI 1
 - [Day 33](#day-33): Animation in SwiftUI 2
 - [Day 34](#day-34): Animation in SwiftUI 3
+- [Day 35](#day-35): Milestone: multiplication table app
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -3855,3 +3856,141 @@ func askQuestion() {
 The final result is shown in the gif below.
 
 ![GuessTheFlag app with animation for when the user tap on flags](/assets/images/2024-06-20-100-days-of-swiftui/guessTheFlagAnimated.gif)
+
+# Day 35
+Today we are on our own. We have to build an app from scratch. The requirements are:
+1. User can insert a number representing the multiplication table they want to study
+2. User can insert the number of question which the system will propose
+3. The system presents to the user the questions
+4. The system presents the final score (correct answer over number of questions) to the user
+
+To tackle this problem I started from defining a view with some states representing the data the user will insert, and a `gameStatus` which can be either `settings` or `paly`. Then, based on this `gameStatus` the app present two view:
+1. `FormSettingsView` which require to the user some settings to play and a button to start playing (switch the `gameStatus` to `play`)
+2. `PlayView` which presents to the user the questions and keeps track of the score.
+
+{% highlight swift %}
+enum GameStatus {
+case settings, play
+}
+
+struct FormSettingsView: View {
+    @Binding var multiplicationTableFactor: Int
+    @Binding var numberOfQuestions: Int
+    @Binding var gameStatus: GameStatus
+    
+    @Binding var finalMessage: String?
+    
+    var body: some View {
+        Form {
+            Stepper("Multiplication table of \(multiplicationTableFactor)", value: $multiplicationTableFactor, in: 1...12)
+            Stepper("^[\(numberOfQuestions) questions](inflect:true)", value: $numberOfQuestions, in: 1...100)
+            HStack {
+                Spacer()
+                Button("Start") {
+                    print("toggle game status")
+                    gameStatus = .play
+                }
+                Spacer()
+            }
+            .padding()
+        }
+        if let finalMessage = finalMessage {
+            ZStack {
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(.fill)
+                Text(finalMessage)
+                    .font(.title)
+            }
+        }
+    }
+}
+
+struct Question {
+    let question: String
+    let answer: Int
+}
+
+struct PlayView: View {
+    @Binding var multiplicationTableFactor: Int
+    @Binding var numberOfQuestions: Int
+    @Binding var gameStatus: GameStatus
+    
+    @State private var currentQuestion = 1
+    private var currentQuestionIndex: Int {
+        currentQuestion - 1
+    }
+    @State private var currentAnswer = 0
+    var questions: [Question]
+    
+    @State private var score = 0
+    @Binding var finalMessage: String?
+    
+    var body: some View {
+        VStack {
+            Text("Question \(currentQuestion)")
+                .font(.headline)
+            Text(questions[currentQuestionIndex].question)
+                .font(.title)
+            HStack {
+                Spacer()
+                TextField("Your answer", value: $currentAnswer, format: .number)
+                    .padding()
+                    .border(.primary)
+                Spacer()
+            }
+        }
+        .onSubmit {
+            if questions[currentQuestionIndex].answer == currentAnswer {
+                score += 1
+            }
+            
+            currentAnswer = 0
+            currentQuestion += 1
+            
+            if currentQuestion > numberOfQuestions {
+                finalMessage = "Your last result is: \(score)/\(numberOfQuestions)"
+                gameStatus = .settings
+            }
+        }
+    }
+}
+
+struct ContentView: View {
+    @State private var multiplicationTableFactor = 2
+    @State private var numberOfQuestions = 1
+    @State private var gameStatus: GameStatus = .settings
+    @State private var finalMessage: String? = nil
+    
+    var body: some View {
+        switch gameStatus {
+        case .settings:
+            FormSettingsView(multiplicationTableFactor: $multiplicationTableFactor, 
+                             numberOfQuestions: $numberOfQuestions,
+                             gameStatus: $gameStatus,
+                             finalMessage: $finalMessage)
+        case .play:
+            PlayView(multiplicationTableFactor: $multiplicationTableFactor,
+                     numberOfQuestions: $numberOfQuestions,
+                     gameStatus: $gameStatus,
+                     questions: Array(1...numberOfQuestions+1).map({_ in getRandomQuestion()}),
+                     finalMessage: $finalMessage
+            )
+        }
+    }
+    
+    func getRandomQuestion() -> Question {
+        let randomFactor = Int.random(in: 1...10)
+        return Question(question: "\(multiplicationTableFactor) x \(randomFactor)", answer: multiplicationTableFactor*randomFactor)
+    }
+}
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img id="MultiplicationApp" src="/assets/images/2024-06-20-100-days-of-swiftui/formViewMultiplication.png" alt="Form for entering which multiplication table and how many questions">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('MultiplicationApp', '/assets/images/2024-06-20-100-days-of-swiftui/formViewMultiplication.png', 'Form for entering which multiplication table and how many questions')">1</button>
+        <button onclick="changeImage('MultiplicationApp', '/assets/images/2024-06-20-100-days-of-swiftui/playViewMultiplication', 'View for entering the result for the question 3*8')">2</button>
+        <button onclick="changeImage('MultiplicationApp', '/assets/images/2024-06-20-100-days-of-swiftui/formViewWithResultMultiplication.png', 'Form for entering which multiplication table and how many questions. In addition, there is also the number of correct answer the user gave last time')">3</button>
+    </div>
+</div>
+
