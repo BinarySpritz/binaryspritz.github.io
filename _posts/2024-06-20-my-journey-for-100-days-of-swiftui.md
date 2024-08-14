@@ -3989,7 +3989,7 @@ struct ContentView: View {
     <img id="MultiplicationApp" src="/assets/images/2024-06-20-100-days-of-swiftui/formViewMultiplication.png" alt="Form for entering which multiplication table and how many questions">
         <div style="display: flex; flex-direction: row; justify-content: space-evenly">
         <button onclick="changeImage('MultiplicationApp', '/assets/images/2024-06-20-100-days-of-swiftui/formViewMultiplication.png', 'Form for entering which multiplication table and how many questions')">1</button>
-        <button onclick="changeImage('MultiplicationApp', '/assets/images/2024-06-20-100-days-of-swiftui/playViewMultiplication', 'View for entering the result for the question 3*8')">2</button>
+        <button onclick="changeImage('MultiplicationApp', '/assets/images/2024-06-20-100-days-of-swiftui/playViewMultiplication.png', 'View for entering the result for the question 3*8')">2</button>
         <button onclick="changeImage('MultiplicationApp', '/assets/images/2024-06-20-100-days-of-swiftui/formViewWithResultMultiplication.png', 'Form for entering which multiplication table and how many questions. In addition, there is also the number of correct answer the user gave last time')">3</button>
     </div>
 </div>
