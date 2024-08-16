@@ -59,6 +59,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 33](#day-33): Animation in SwiftUI 2
 - [Day 34](#day-34): Animation in SwiftUI 3
 - [Day 35](#day-35): Milestone: multiplication table app
+- [Day 36](#day-36): iExpense part 1/3
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -3994,3 +3995,184 @@ struct ContentView: View {
     </div>
 </div>
 
+# Day 36
+Today we start learning how to build more complex apps.
+
+## Observable objects
+Let's start seeing how to handle set of data holds together with structs and classes.
+
+{% highlight swift %}
+dict User {
+    var firstName = "Bilbo"
+    var lastName = "Beggins"
+}
+
+struct ContentView: View {
+    @State private var user = User()
+    
+    var body: some View {
+        VStack {
+            Text("Your name is \(user.firstName) \(user.lastName)")
+            
+            TextField("First name", text: $user.firstName)
+            TextField("Laast name", text: $user.lastName)
+        }
+        .padding()
+    }
+}
+{% endhighlight %}
+
+In this first example everything works as expected. We can change the value of `firstName` and `lastName` and the view will change accordingly. There is a problem with this approach: we cannot share the `user` variable with any other view because it is an instance of a `struct`. The solution is easy: change `struct` with `class`.
+
+{% highlight swift %}
+class User {
+    var firstName = "Bilbo"
+    var lastName = "Beggins"
+}
+
+struct ContentView: View {
+    @State private var user = User()
+    
+    var body: some View {
+        VStack {
+            Text("Your name is \(user.firstName) \(user.lastName)")
+            
+            TextField("First name", text: $user.firstName)
+            TextField("Laast name", text: $user.lastName)
+        }
+        .padding()
+    }
+}
+{% endhighlight %}
+
+But now, it is not reactive anymore. If we try changing the first name or the last name, our view does not change. That's because we are not recreacting a new object when we make a change (that was happening with the `struct`).
+
+Fixing this issue is easy. We add `@Observable` above the clas declaration:
+
+{% highlight swift %}
+@Observable
+class User {
+    var firstName = "Bilbo"
+    var lastName = "Beggins"
+}
+{% endhighlight %}
+
+`@Observable` tells swiftUI to keep track of changes happening inside the class and reload the view which depends on that class. `@Observable` is a macro which "rewrite" our code before compiling it to give us some fuctionality.
+
+## Presenting new views
+We can present new view in a similar way we present alerts. Ataching the `.sheet` modifier to our view and returing the view we want to show in the `content` parameter. We can obviously pass data to this new view and to dismiss it there are two ways: swipe down the view and call the `dismiss()` function given to us by `@Environmen(\.dismiss)` property wrapper.
+
+{% highlight swift %}
+struct SecondView: View {
+    @Environment(\.dismiss) var dismiss
+    let name: String
+    
+    var body: some View {
+        Text("Hello \(name)")
+        Button("Dismiss") {
+            dismiss()
+        }
+    }
+}
+
+struct ContentView: View {
+    @State private var showingSheet = false
+    
+    var body: some View {
+        Button("Show the sheet") {
+            showingSheet.toggle()
+        }
+        .sheet(isPresented: $showingSheet, content: {
+            SecondView(name: "Marco")
+        })
+    }
+}
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img id="ViewPresentation" src="/assets/images/2024-06-20-100-days-of-swiftui/viewPresentationA.png" alt="A view with a button requiring to be pressed">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('ViewPresentation', '/assets/images/2024-06-20-100-days-of-swiftui/viewPresentationA.png', 'A view with a button requiring to be pressed')">1</button>
+        <button onclick="changeImage('ViewPresentation', '/assets/images/2024-06-20-100-days-of-swiftui/viewPresentationB.png', 'A new view which a text and a button to dismiss it')">2</button>
+    </div>
+</div>
+
+## Deleting items from a list
+Next thing to step up our apps are the deletion of items from a list. It is achieved by adding the modifier `onDelete` to the `ForEach` insider a `List` which accept a function which takes as input an `IndexSet` representing the offset from where delete the item (which can be conveniently passed to `remove(atOffset: )` method of an array). We can even add the "Edit/Done" button in a simple way.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var numbers: [Int] = []
+    @State private var currentNumber = 1
+    
+    var body: some View {
+        NavigationStack {
+            VStack {
+                List {
+                    ForEach(numbers, id: \.self) {
+                        Text("Row \($0)")
+                    }
+                    .onDelete(perform: removeRows)
+                }
+                
+                Button("Add number") {
+                    numbers.append(currentNumber)
+                    currentNumber += 1
+                }
+            }
+            .toolbar(content: {
+                EditButton()
+            })
+        }
+    }
+    
+    func removeRows(at offset: IndexSet) {
+        numbers.remove(atOffsets: offset)
+    }
+}
+{% endhighlight %}
+
+![Gif which shows how to delete elements from a list](/assets/images/2024-06-20-100-days-of-swiftui/deleteFromLIst.gif)
+
+## AppStorage (or UserDefaults)
+A way to store user data is using the `@AppStorage` wrapper (which is a wrapper itself around `UserDefaults`). This allow to remember soma data even if the app is closed.
+
+{% highlight swift %}
+struct ContentView: View {
+    @AppStorage("tapCount") private var tapCount = 0
+    
+    var body: some View {
+        Button("Tap count: \(tapCount)") {
+            tapCount += 1
+        }
+    }
+}
+{% endhighlight %}
+
+![Gif which shows a counter keeping track of the number even when it is closed](/assets/images/2024-06-20-100-days-of-swiftui/appStorage.gif)
+
+Keep in mind that AppStorage is good to storage small amount of data and not big object.
+
+## Encode and decode data
+We can save more complex data in `UserDefaults`. We just have to convert it in a string format (JSON for example). As long as we want to store simple structs (made by strings, integers, booleans, doubles, ...) we can just add the `Codable` protocol to our string and invoke the `encode` method of the `JSONEncoder` class.
+
+{% highlight swift %}
+struct User: Codable {
+    let firstName: String
+    let lastName: String
+}
+
+struct ContentView: View {
+    @State private var user = User(firstName: "Tim", lastName: "Lee")
+    
+    var body: some View {
+        Button("Save user") {
+            let encoder = JSONEncoder()
+            
+            if let data = try? encoder.encode(user) {
+                UserDefaults.standard.set(data, forKey: "UserData")
+            }
+        }
+    }
+}
+{% endhighlight %}
