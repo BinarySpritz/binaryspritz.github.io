@@ -60,6 +60,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 34](#day-34): Animation in SwiftUI 3
 - [Day 35](#day-35): Milestone: multiplication table app
 - [Day 36](#day-36): iExpense part 1/3
+- [Day 37](#day-37): iExpense part 2/3
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -4176,3 +4177,174 @@ struct ContentView: View {
     }
 }
 {% endhighlight %}
+
+# Day 37
+Today we start building the iExpense app for real. We need:
+1. A list to show our expense
+2. A form to insert new expenses
+
+Let's start with task number one: we can define a new `struct` which holds our expense data:
+
+{% highlight swift %}
+struct ExpenseItem: Identifiable {
+    let id = UUID()
+    let name: String
+    let type: String
+    let amount: Double
+}
+{% endhighlight %}
+
+There a couple of new things here:
+1. `: Identifiable` means that our view conforms the the `Identifiable` protocol
+2. `id = UUID()` is necessary to conform to the `Identifiable` protocol. The `UUID()` generates a uniqui identifier for each instance of our struct.
+
+Then we need a class which encapsulate our list of expenses:
+
+{% highlight swift %}
+@Observable
+class Expenses {
+    var items: [ExpenseItem] = []
+}
+{% endhighlight %}
+
+And the we can define our `ContentView`:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var expenses = Expenses()
+    
+    @State private var showingAddExpense = false
+    
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(expenses.items) { item in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(item.name)
+                                .font(.headline)
+                            Text(item.type)
+                        }
+                        
+                        Spacer()
+                        
+                        Text(item.amount, format: .currency(code: "EUR"))
+                    }
+                }
+                .onDelete(perform: removeItems)
+            }
+            .navigationTitle("iExpense")
+            .toolbar {
+                Button("Add expense", systemImage: "plus") {
+                    showingAddExpense = true
+                }
+            }
+            .sheet(isPresented: $showingAddExpense, content: {
+                AddView(expenses: expenses)
+            })
+        }
+    }
+    
+    func removeItems(at offset: IndexSet) {
+        expenses.items.remove(atOffsets: offset)
+    }
+}
+{% endhighlight %}
+
+It is worth noticing that in the `ForEach` statement to build the list we haven't declared the `id: `. That's because our `ExpenseItem`s conform to the `Identifiable` protocol.
+
+Moreover, we added the logic to present our `AddView`. The `AddView` is a view we have declared in another file (`AddView.swift`)
+
+{% highlight swift %}
+struct AddView: View {
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var name = ""
+    @State private var type = "Personal"
+    @State private var amount = 0.0
+    
+    var expenses: Expenses
+    
+    let types = ["Business", "Personal"]
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Name", text: $name)
+                
+                Picker("Type", selection: $type) {
+                    ForEach(types, id: \.self) {
+                        Text($0)
+                    }
+                }
+                
+                TextField("Amount", value: $amount, format: .currency(code: "EUR"))
+                    .keyboardType(.decimalPad)
+            }
+            .navigationTitle("Add new expense")
+            .toolbar {
+                Button("Save") {
+                    let item = ExpenseItem(name: name, type: type, amount: amount)
+                    expenses.items.append(item)
+                    dismiss()
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    AddView(expenses: Expenses())
+}
+{% endhighlight %}
+
+This implementation "works" but it is missing of a key requirement: data persistency. 
+
+To achieve data persistence we have to change our models (`ExpenseItem` and `Expenses`)
+
+{% highlight swift %}
+struct ExpenseItem: Identifiable, Codable {
+    var id = UUID()
+    let name: String
+    let type: String
+    let amount: Double
+}
+
+@Observable
+class Expenses {
+    var items: [ExpenseItem] = [] {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(items) {
+                UserDefaults.standard.set(encoded, forKey: "Items")
+            }
+        }
+    }
+    
+    init() {
+        if let savedItems = UserDefaults.standard.data(forKey: "Items") {
+            if let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
+                items = decodedItems
+                return
+            }
+        }
+        
+        items = []
+    }
+}
+{% endhighlight %}
+
+The `ExpenseItem` has to conform to the `Codable` protocol in order to be encoded and decoded automatically. 
+
+Moreover, we change our `Expenses` class in order to:
+1. Automatically save the `items` each time it is modified
+2. Initialize from the data saved in the `UserDefaults`
+
+<div style="max-width: 100%;">
+    <img id="iExpense" src="/assets/images/2024-06-20-100-days-of-swiftui/iExpenseA.png" alt="A view with an empty list and the title of iExpense">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('iExpense', '/assets/images/2024-06-20-100-days-of-swiftui/iExpenseA.png', 'A view with an empty list and the title of iExpense')">1</button>
+        <button onclick="changeImage('iExpense', '/assets/images/2024-06-20-100-days-of-swiftui/iExpenseB.png', 'AddView of iExpense: a form with three inputs and a save button')">2</button>
+        <button onclick="changeImage('iExpense', '/assets/images/2024-06-20-100-days-of-swiftui/iExpenseC.png', 'A view with a list with one item represent an added expense')">3</button>
+    </div>
+</div>
