@@ -61,6 +61,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 35](#day-35): Milestone: multiplication table app
 - [Day 36](#day-36): iExpense part 1/3
 - [Day 37](#day-37): iExpense part 2/3
+- [Day 38](#day-38): iExpense part 3/3
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -4348,3 +4349,59 @@ Moreover, we change our `Expenses` class in order to:
         <button onclick="changeImage('iExpense', '/assets/images/2024-06-20-100-days-of-swiftui/iExpenseC.png', 'A view with a list with one item represent an added expense')">3</button>
     </div>
 </div>
+
+# Day 38
+Three challenges lie ahead for today:
+1. Use the user's preferred currency instead of the hardcoded `"EUR"`
+2. Change how the amount is shown: green if below `10`, yello if below `100`, and red otherwise
+3. Split the list in two sections: "Personal" and "Business"
+
+The first two challenges have been quite easy. They required the application of something we have already seen other days. The last one required some more thinking. My solution modifies the `removeItems` method called on `onDelete`. Now it requires the `type` of the section and then convert the offset to the expenses and then remove the expenses which match. 
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var expenses = Expenses()
+    
+    @State private var showingAddExpense = false
+    
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Personal") {
+                    ForEach(expenses.items.filter({$0.type == "Personal"})) { item in
+                        ExpenseListItem(item: item)
+                    }
+                    .onDelete(perform: {removeItems(at: $0, for: "Personal")})
+                }
+                
+                Section("Business") {
+                    ForEach(expenses.items.filter({$0.type == "Business"})) { item in
+                        ExpenseListItem(item: item)
+                    }
+                    .onDelete(perform: {removeItems(at: $0, for: "Business")})
+                }
+            }
+            .navigationTitle("iExpense")
+            .toolbar {
+                Button("Add expense", systemImage: "plus") {
+                    showingAddExpense = true
+                }
+            }
+            .sheet(isPresented: $showingAddExpense, content: {
+                AddView(expenses: expenses)
+            })
+        }
+    }
+    
+    func removeItems(at offsets: IndexSet, for type: String) {
+        let expensesToDelete = offsets.map { expenses.items.filter({ $0.type == type})[$0] }
+       
+        for expense in expensesToDelete {
+            expenses.items.removeAll(where: {$0.id == expense.id})
+        }
+    }
+}
+{% endhighlight %}
+
+![ContentView of iExpense showing that the color of expenseItems changed based on the amount](/assets/images/2024-06-20-100-days-of-swiftui/iExpenseD.png)
