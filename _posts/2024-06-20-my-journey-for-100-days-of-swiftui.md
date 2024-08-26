@@ -62,6 +62,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 36](#day-36): iExpense part 1/3
 - [Day 37](#day-37): iExpense part 2/3
 - [Day 38](#day-38): iExpense part 3/3
+- [Day 39](#day-39): Moonshot part 1/4 (images, scrool views, navigation stacks, more on codable, and grid views)
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -4405,3 +4406,144 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![ContentView of iExpense showing that the color of expenseItems changed based on the amount](/assets/images/2024-06-20-100-days-of-swiftui/iExpenseD.png)
+
+# Day 39
+Today we start a new project but, as usual, we learn some new stuff before starting our real project.
+
+## Images
+First of all, we start learning how resize images. There are a couple of modifiers to change how the user sees an image:
+
+- `resizable()`
+- `clipped()`
+- `scaleToFit()`
+- `scaleToFill()`
+- `containerRelativeFrame(...) {size, axis in ...}`
+
+## ScrollView and LazyStacks
+A `ScrollView` is a viw that can be scrolled by the user. It always has a stack inside which can be `Lazy` if you want that each view is built just before appearing on the screen. Otherwise, every view will be built at the instatiation of the `ScrollView`.
+
+{% highlight swift %}
+ScrollView {
+    VStack {
+        ForEach(0..<100) {
+            Text("Element \($0)")
+        }
+    }
+}
+{% endhighlight %}
+
+{% highlight swift %}
+ScrollView {
+    LazyVStack {
+        ForEach(0..<100) {
+            Text("Element \($0)")
+        }
+    }
+}
+{% endhighlight %}
+
+{% highlight swift %}
+ScrollView(.horizontal) {
+    HStack {
+        ForEach(0..<100) {
+            Text("Element \($0)")
+        }
+    }
+}
+{% endhighlight %}
+
+{% highlight swift %}
+ScrollView(.horizontal) {
+    LazyHStack {
+        ForEach(0..<100) {
+            Text("Element \($0)")
+        }
+    }
+}
+{% endhighlight %}
+
+## NavigationStack and NavigationLink
+We can use the `NavigationStack` view to build element which "open" new views. Inside a `NavigationStack` we can add a `NavigationLink` to create a cliccable element which create a new `View` and push it on top of the `NavigationStack` automatically builidng the "back" button.
+
+{% highlight swift %}
+struct ContentView: View {
+    var body: some View {
+        NavigationStack {
+            List(0..<100) {row in
+                NavigationLink("Row \(row)") {
+                    Text("Detial \(row)")
+                }
+            }
+            .navigationTitle("SwiftUI")
+        }
+    }
+}
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img id="NavigationStack" src="/assets/images/2024-06-20-100-days-of-swiftui/navigationStackA.png" alt="A list with elements as Row #">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('NavigationStack', '/assets/images/2024-06-20-100-days-of-swiftui/navigationStackA.png', 'A list with elements as Row #')">1</button>
+        <button onclick="changeImage('NavigationStack', '/assets/images/2024-06-20-100-days-of-swiftui/navigationStackB.png', 'The detail view of row 7: a text with written Detail 7')">2</button>
+    </div>
+</div>
+
+## Hierarchy of codable structs
+When we have complex `Struct`s (with arrays or other structs as attributes) we have to ensure that every other `Struct`s is `Codable`/
+
+{% highlight swift %}
+struct User: Codable {
+    let name: String
+    let address: Address
+}
+
+struct Address: Codable {
+    let street: String
+    let city: String
+}
+
+struct ContentView: View {
+    var body: some View {
+        Button("Decode JSON") {
+            let input = """
+            {
+                "name": "Tim",
+                "address": {
+                    "street": "123, Tim Avenue",
+                    "city": "Anywhereville"
+                }
+            }
+            """
+            let data = Data(input.utf8)
+            let decoder = JSONDecoder()
+            
+            if let user = try? decoder.decode(User.self, from: data) {
+                print(user.address.street)
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+## GridView
+We can layout our elements in a grid way. We need an `Array` of `GridItem`s (which specify the repetition in the axis which is not described by the `ScrollView`) and a `ScrollView` with a `LazyVGrid` or `LazyHGrid` inside.
+
+{% highlight swift %}
+struct ContentView: View {
+    let layout = [
+        GridItem(.adaptive(minimum: 80)),
+    ]
+    
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: layout, content: {
+                ForEach(0..<1000) {
+                    Text("Item \($0)")
+                }
+            })
+        }
+    }
+}
+{% endhighlight %}
+
+![One thousand texts disposed in a grid format]('/assets/images/2024-06-20-100-days-of-swiftui/GridView.png)
