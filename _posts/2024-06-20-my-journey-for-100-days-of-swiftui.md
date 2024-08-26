@@ -4546,4 +4546,4 @@ struct ContentView: View {
 }
 {% endhighlight %}
 
-![One thousand texts disposed in a grid format]('/assets/images/2024-06-20-100-days-of-swiftui/GridView.png)
+![One thousand texts disposed in a grid format]('/assets/images/2024-06-20-100-days-of-swiftui/GridView.png')
