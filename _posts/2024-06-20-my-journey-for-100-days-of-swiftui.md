@@ -63,6 +63,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 37](#day-37): iExpense part 2/3
 - [Day 38](#day-38): iExpense part 3/3
 - [Day 39](#day-39): Moonshot part 1/4 (images, scrool views, navigation stacks, more on codable, and grid views)
+- [Day 40](#day-40): Moonshot part 2/4
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -4547,3 +4548,225 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![One thousand texts disposed in a grid format](/assets/images/2024-06-20-100-days-of-swiftui/GridView.png)
+
+# Day 40
+Today we start building our MoonShoot app. We start from the data models: `Astronaut` and the way to decode them from a JSON file.
+
+We start writing our `struct` which reflects the structure of our Astronauts in the JSON file: 
+
+{% highlight swift %}
+struct Astronaut: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String
+}
+{% endhighlight %}
+
+It implements the `Codable` protocol to be decoded from a `JSONDecoder`. 
+
+The decoding part is implemented in an `extension` of `Bundle`.
+
+{% highlight swift %}
+extension Bundle {
+    func decode(_ file: String) -> [String: Astronaut] {
+        guard let url = self.url(forResource: file, withExtension: nil) else {
+            fatalError("Unable to locate \(file) in bundle")
+        }
+        
+        guard let data = try? Data(contentsOf: url) else {
+            fatalError("Failed to load \(file) from bundle")
+        }
+        
+        let decoder = JSONDecoder()
+        
+        do {
+            return try decoder.decode([String: Astronaut], from: data)
+        } catch DecodingError.keyNotFound(let key, let context) {
+            fatalError("Failed to decode \(file) from bundle due to missing key '\(key)'")
+        } catch DecodingError.typeMismatch(_, let context) {
+            fatalError("Failed to decode \(file) due to type mismatch - \(context.debugDescription)")
+        } catch DecodingError.valueNotFound(let type, let context) {
+            fatalError("Failed to decode \(file) from bundle due to missing \(type) value - \(context.debugDescription)")
+        } catch DecodingError.dataCorrupted(_) {
+            fatalError("Failed to decode \(file) from bundle because it appearts to be invalid JSON")
+        } catch {
+            fatalError("Unable to decode \(file)")
+        }
+    }
+}
+{% endhighlight %}
+
+Our app has another data type: Missions. As always, we start writing its `struct` reflecting the json file from which they will be instantiated:
+
+{% highlight swift %}
+struct Mission: Codable, Identifiable {
+    struct CrewRole: Codable {
+        let name: String
+        let role: String
+    }
+    
+    let id: Int
+    let launchDate: String?
+    let crew: [CrewRole]
+    let description: String
+}
+{% endhighlight %}
+
+And then we need a method to decode the file. We could copy&paste the `decode` method we wrote earlier but the only thing which change would be the return type. A better solution is using **generics**. Let's change the `decode` method:
+
+{% highlight swift %}
+func decode<T: Codable>(_ file: String) -> T {
+    guard let url = self.url(forResource: file, withExtension: nil) else {
+        fatalError("Unable to locate \(file) in bundle")
+    }
+    
+    guard let data = try? Data(contentsOf: url) else {
+        fatalError("Failed to load \(file) from bundle")
+    }
+    
+    let decoder = JSONDecoder()
+    
+    do {
+        return try decoder.decode(T.self, from: data)
+    } catch DecodingError.keyNotFound(let key, let context) {
+        fatalError("Failed to decode \(file) from bundle due to missing key '\(key)'")
+    } catch DecodingError.typeMismatch(_, let context) {
+        fatalError("Failed to decode \(file) due to type mismatch - \(context.debugDescription)")
+    } catch DecodingError.valueNotFound(let type, let context) {
+        fatalError("Failed to decode \(file) from bundle due to missing \(type) value - \(context.debugDescription)")
+    } catch DecodingError.dataCorrupted(_) {
+        fatalError("Failed to decode \(file) from bundle because it appearts to be invalid JSON")
+    } catch {
+        fatalError("Unable to decode \(file)")
+    }
+}
+{% endhighlight %}
+
+Now we can return any type conforms to the `Codable` protocol.
+
+It is importart to notice that to use this method we need to specify the type before calling the method otherwise Swift would not know how to instantiate `T`.
+
+{% highlight swift %}
+struct ContentView: View {
+    let astronauts: [String: Astronaut] = Bundle.main.decode("astronauts.json")
+    let missions: [Mission] = Bundle.main.decode("missions.json")
+    
+    var body: some View {
+        Text(String(astronauts.count))
+        Text(String(missions.count))
+    }
+}
+{% endhighlight %}
+
+This implementation has still some flaws. In particular mission's `launchDate`. Now, it will be parsed as a simple `String` but that it's a bit awful. The solution is adopt the `Date` type that Swift provides.
+
+{% highlight swift %}
+    let launchDate: Date?
+{% endhighlight %}
+
+Now, our decoder has some problem understanding how to decode the `launchDate` properties in the JSON file. We have to specify the format in our `decode` function:
+
+{% highlight swift %}
+    let decoder = JSONDecoder()
+    let formatter = DateFormatter()
+    formatter.dateFormat = "y-MM-dd"
+    decoder.dateDecodingStrategy = .formatted(formatter)
+{% endhighlight %}
+
+Finally we can move on building our view. We will use a grid to show the missions 
+
+{% highlight swift %}
+struct ContentView: View {
+    let astronauts: [String: Astronaut] = Bundle.main.decode("astronauts.json")
+    let missions: [Mission] = Bundle.main.decode("missions.json")
+    
+    let colums = [
+        GridItem(.adaptive(minimum: 150))
+    ]
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: colums) {
+                    ForEach(missions) { mission in
+                        NavigationLink {
+                            Text("Detail view")
+                        } label: {
+                            VStack {
+                                Image(mission.image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 100, height: 100)
+                                    .padding()
+                                
+                                VStack {
+                                    Text(mission.displayName)
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                    
+                                    Text(mission.formattedLaunchDate)
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                }
+                                .padding(.vertical)
+                                .frame(maxWidth: .infinity)
+                                .background(.lightBackground)
+                            }
+                            .clipShape(.rect(cornerRadius: 10))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(.lightBackground)
+                            }
+                        }
+                    }
+                }
+                .padding([.horizontal, .bottom])
+            }
+            .navigationTitle("Moonshot")
+            .background(.darkBackground)
+            .preferredColorScheme(.dark)
+        }
+    }
+}
+{% endhighlight %}
+
+There are a couple of utilities added to make this code more readable:
+
+- computed properties in `Mission`
+- custom background colors
+
+The first additions regard the `Mission` struct:
+
+{% highlight swift %}
+    var displayName: String {
+        "Apollo \(id)"
+    }
+    
+    var image: String {
+        "apollo\(id)"
+    }
+    
+    var formattedLaunchDate: String {
+        launchDate?.formatted(date: .abbreviated, time: .omitted) ?? "Not available"
+    }
+{% endhighlight %}
+
+They are three computed properties to simplify the presention of a mission removing the work from the view.
+
+The custom background colors are implemented as extension of `ShapeStyle` (because `Color` is a `ShapeStyle`): 
+
+{% highlight swift %}
+extension ShapeStyle where Self == Color {
+    static var darkBackground: Color {
+        Color(red: 0.1, green: 0.1, blue: 0.2)
+    }
+    
+    static var lightBackground: Color {
+        Color(red: 0.2, green: 0.2, blue: 0.3)
+    }
+}
+{% endhighlight %}
+
+Finally, it is worth noticing the `.preferredColorScheme` to force the color scheme to be the dark mode.
+
+![A grid view with the logos of Appolo's missions, their name and the launch date](/assets/images/2024-06-20-100-days-of-swiftui/moonShotV1.png)
