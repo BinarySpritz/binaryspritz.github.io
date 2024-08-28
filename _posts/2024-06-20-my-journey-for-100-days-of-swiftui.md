@@ -64,6 +64,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 38](#day-38): iExpense part 3/3
 - [Day 39](#day-39): Moonshot part 1/4 (images, scrool views, navigation stacks, more on codable, and grid views)
 - [Day 40](#day-40): Moonshot part 2/4
+- [Day 41](#day-41): Moonshot part 3/4
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -4543,6 +4544,13 @@ struct ContentView: View {
                 }
             })
         }
+<div style="max-width: 100%;">
+    <img id="NavigationStack" src="/assets/images/2024-06-20-100-days-of-swiftui/navigationStackA.png" alt="A list with elements as Row #">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('NavigationStack', '/assets/images/2024-06-20-100-days-of-swiftui/navigationStackA.png', 'A list with elements as Row #')">1</button>
+        <button onclick="changeImage('NavigationStack', '/assets/images/2024-06-20-100-days-of-swiftui/navigationStackB.png', 'The detail view of row 7: a text with written Detail 7')">2</button>
+    </div>
+</div>
     }
 }
 {% endhighlight %}
@@ -4770,3 +4778,149 @@ extension ShapeStyle where Self == Color {
 Finally, it is worth noticing the `.preferredColorScheme` to force the color scheme to be the dark mode.
 
 ![A grid view with the logos of Appolo's missions, their name and the launch date](/assets/images/2024-06-20-100-days-of-swiftui/moonShotV1.png)
+
+# Day 41
+Today we add two more views. The first one presents the mission and the second one presents an astronaut.
+
+{% highlight swift %}
+struct MissionView: View {
+    struct CrewMember {
+        let role: String
+        let astronaut: Astronaut
+    }
+    
+    let mission: Mission
+    let crew: [CrewMember]
+    
+    var body: some View {
+        ScrollView {
+            VStack {
+                Image(mission.image)
+                    .resizable()
+                    .scaledToFit()
+                    .containerRelativeFrame(.horizontal) {width, axis in
+                        width * 0.6
+                    }
+                
+                VStack(alignment: .leading) {
+                    Rectangle()
+                        .frame(height: 2)
+                        .foregroundStyle(.lightBackground)
+                        .padding(.vertical)
+                    
+                    Text("Mission Highlights")
+                        .font(.title.bold())
+                        .padding(.bottom, 5)
+                    
+                    Text(mission.description)
+                    
+                    Rectangle()
+                        .frame(height: 2)
+                        .foregroundStyle(.lightBackground)
+                        .padding(.vertical)
+                    
+                    Text("Crew")
+                        .font(.title.bold())
+                        .padding(.bottom, 5)
+                }
+                .padding(.horizontal)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(crew, id: \.role) {crewMember in
+                            NavigationLink {
+                                AstronautView(astronaut: crewMember.astronaut)
+                            } label: {
+                                HStack {
+                                    Image(crewMember.astronaut.id)
+                                        .resizable()
+                                        .frame(width: 104, height: 72)
+                                        .clipShape(.capsule)
+                                        .overlay {
+                                            Capsule()
+                                                .strokeBorder(.white, lineWidth: 1)
+                                        }
+                                    
+                                    VStack(alignment: .leading) {
+                                        Text(crewMember.astronaut.name)
+                                            .foregroundStyle(.white)
+                                            .font(.headline)
+                                        
+                                        Text(crewMember.role)
+                                            .foregroundStyle(.white.opacity(0.5))
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.bottom)
+        }
+        .navigationTitle(mission.displayName)
+        .navigationBarTitleDisplayMode(.inline)
+        .background(.darkBackground)
+    }
+    
+    init(mission: Mission, astronauts: [String: Astronaut]) {
+        self.mission = mission
+        
+        self.crew = mission.crew.map({ member in
+            if let astronaut = astronauts[member.name] {
+                return CrewMember(role: member.role, astronaut: astronaut)
+            } else {
+                fatalError("Missing \(member.name)")
+            }
+        })
+    }
+}
+
+#Preview {
+    let missions: [Mission] = Bundle.main.decode("missions.json")
+    let astronauts: [String: Astronaut] = Bundle.main.decode("astronauts.json")
+    
+    return MissionView(mission: missions[0], astronauts: astronauts)
+        .preferredColorScheme(.dark)
+}
+{% endhighlight %}
+
+{% highlight swift %}
+struct AstronautView: View {
+    let astronaut: Astronaut
+    
+    var body: some View {
+        ScrollView {
+            VStack {
+                Image(astronaut.id)
+                    .resizable()
+                    .scaledToFit()
+                
+                Text(astronaut.description)
+                    .padding(.horizontal)
+            }
+        }
+        .background(.darkBackground)
+        .navigationTitle(astronaut.name)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+#Preview {
+    let astronauts: [String: Astronaut] = Bundle.main.decode("astronauts.json")
+    
+    return AstronautView(astronaut: astronauts["aldrin"]!)
+        .preferredColorScheme(.dark)
+}
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img id="MoonShot" src="/assets/images/2024-06-20-100-days-of-swiftui/moonShotV2a.png" alt="A grid view with the name of the missions and their launch date">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('MoonShot', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV2a.png', 'A grid view with the name of the missions and their launch date')">1</button>
+        <button onclick="changeImage('MoonShot', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV2b.png', 'The detail view of a mission with the logo, and the description')">2</button>
+        <button onclick="changeImage('MoonShot', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV2c.png', 'The detail view of a mission with the end of the description and the crew')">3</button>
+        <button onclick="changeImage('MoonShot', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV2d.png', 'The detail view of an astronaut with their photo and a description')">4</button>
+    </div>
+</div>
+
