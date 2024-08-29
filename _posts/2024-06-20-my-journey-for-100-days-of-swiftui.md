@@ -64,7 +64,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 38](#day-38): iExpense part 3/3
 - [Day 39](#day-39): Moonshot part 1/4 (images, scrool views, navigation stacks, more on codable, and grid views)
 - [Day 40](#day-40): Moonshot part 2/4
-- [Day 41](#day-41): Moonshot part 3/4
+- [Day 42](#day-42): Moonshot part 4/4
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -4921,6 +4921,159 @@ struct AstronautView: View {
         <button onclick="changeImage('MoonShot', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV2b.png', 'The detail view of a mission with the logo, and the description')">2</button>
         <button onclick="changeImage('MoonShot', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV2c.png', 'The detail view of a mission with the end of the description and the crew')">3</button>
         <button onclick="changeImage('MoonShot', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV2d.png', 'The detail view of an astronaut with their photo and a description')">4</button>
+    </div>
+</div>
+
+# Day 42
+Three challenges lay ahead today:
+
+1. Add the mission date to `MissionView`
+2. Move some complex part of `MissionView` in its own `View`
+3. Present the list of missions both as grid and list
+
+The first two challenges are easy to complete.
+
+{% highlight swift %}
+struct CrewMember {
+    let role: String
+    let astronaut: Astronaut
+}
+
+struct CrewMemberView: View {
+    let crewMember: CrewMember
+    
+    var body: some View {
+        HStack {
+            Image(crewMember.astronaut.id)
+                .resizable()
+                .frame(width: 104, height: 72)
+                .clipShape(.capsule)
+                .overlay {
+                    Capsule()
+                        .strokeBorder(.white, lineWidth: 1)
+                }
+            
+            VStack(alignment: .leading) {
+                Text(crewMember.astronaut.name)
+                    .foregroundStyle(.white)
+                    .font(.headline)
+                
+                Text(crewMember.role)
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct CustomDivider: View {
+    var body: some View {
+        Rectangle()
+            .frame(height: 2)
+            .foregroundStyle(.lightBackground)
+            .padding(.vertical)
+    }
+}
+
+struct MissionView: View {
+    let mission: Mission
+    let crew: [CrewMember]
+    
+    var body: some View {
+        ScrollView {
+            VStack {
+                VStack {
+                    Image(mission.image)
+                        .resizable()
+                        .scaledToFit()
+                        .containerRelativeFrame(.horizontal) {width, axis in
+                            width * 0.6
+                        }
+                    Text(mission.formattedLaunchDate)
+                        .font(.headline)
+                        .padding(.top)
+                }
+                
+                VStack(alignment: .leading) {
+                    CustomDivider()
+                    
+                    Text("Mission Highlights")
+                        .font(.title.bold())
+                        .padding(.bottom, 5)
+                    
+                    Text(mission.description)
+                    
+                    CustomDivider()
+                    
+                    Text("Crew")
+                        .font(.title.bold())
+                        .padding(.bottom, 5)
+                }
+                .padding(.horizontal)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(crew, id: \.role) {crewMember in
+                            NavigationLink {
+                                AstronautView(astronaut: crewMember.astronaut)
+                            } label: {
+                                CrewMemberView(crewMember: crewMember)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.bottom)
+        }
+        .navigationTitle(mission.displayName)
+        .navigationBarTitleDisplayMode(.inline)
+        .background(.darkBackground)
+    }
+    
+    init(mission: Mission, astronauts: [String: Astronaut]) {
+        self.mission = mission
+        
+        self.crew = mission.crew.map({ member in
+            if let astronaut = astronauts[member.name] {
+                return CrewMember(role: member.role, astronaut: astronaut)
+            } else {
+                fatalError("Missing \(member.name)")
+            }
+        })
+    }
+}
+{% endhighlight %}
+
+The last one is a bit more tricy. We can implement the functionality in two ways:
+
+1. With an `if` statement we can switch from the `ScrollView` to a `List`
+2. We can use the already working `ScrollView` as a list.
+
+I have choosen the second one.
+
+First of all, we need a property to store which presention mode we have: `@State private var isGridView = true`. Then we have to change the columns of our grid making them filling the whole screen when the property is set to `false`. We can change the `columns` property in this way:
+
+{% highlight swift %}
+    var colums: [GridItem] {
+        [GridItem(.adaptive(minimum: isGridView ? 150 : .infinity))]
+    }
+{% endhighlight %}
+
+Then we can add a button in the toolbar to toggle the `isGridView` property.
+
+{% highlight swift %}
+    .toolbar(content: {
+                Button(isGridView ? "To list" : "To grid") {
+                    isGridView.toggle()
+                }
+            })
+{% endhighlight %}
+
+<div style="max-width: 100%;">
+    <img id="MoonShotv3" src="/assets/images/2024-06-20-100-days-of-swiftui/moonShotV3a.png" alt="A grid view with the name of the missions and their launch date">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('MoonShotv3', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV3a.png', 'A grid view with the name of the missions and their launch date')">1</button>
+        <button onclick="changeImage('MoonShotv3', '/assets/images/2024-06-20-100-days-of-swiftui/moonShotV3b.png', 'A list with the name of the missions and their launch date')">2</button>
     </div>
 </div>
 
