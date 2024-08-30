@@ -65,6 +65,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 39](#day-39): Moonshot part 1/4 (images, scrool views, navigation stacks, more on codable, and grid views)
 - [Day 40](#day-40): Moonshot part 2/4
 - [Day 42](#day-42): Moonshot part 4/4
+- [Day 43](#day-43): more details on navigation
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -5077,3 +5078,27 @@ Then we can add a button in the toolbar to toggle the `isGridView` property.
     </div>
 </div>
 
+# Day 43
+There is a "huge" problem in using `NavigationLink`: it will immediately instantiate the view it has to present. This is not a problem when we have just one view but it can slow down our application if the new view require some time to be instantiated.
+
+There is a better solution: `navigationDestination()`. To use it there are two steps:
+
+1. Define the `navigationLink` with a `value` 
+2. Add the `navigationDestination` modifier 
+
+{% highlight swift %}
+struct ContentView: View {
+    var body: some View {
+        NavigationStack {
+            List(0..<100) { i in
+                NavigationLink("Select \(i)", value: i)
+            }
+            .navigationDestination(for: Int.self) { selection in
+                Text("You selected \(selection)")
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+There is a requirement for the `navigationDestination()` to work: the `value`/`for` must conform to the `Hashable` protocol. 
