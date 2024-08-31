@@ -65,7 +65,8 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 39](#day-39): Moonshot part 1/4 (images, scrool views, navigation stacks, more on codable, and grid views)
 - [Day 40](#day-40): Moonshot part 2/4
 - [Day 42](#day-42): Moonshot part 4/4
-- [Day 43](#day-43): more details on navigation
+- [Day 43](#day-43): more details on navigation 1/2 (`navigationDestination`)
+- [Day 44](#day-44): more details on navigation 2/2 (programmatic navigation)
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -5102,3 +5103,207 @@ struct ContentView: View {
 {% endhighlight %}
 
 There is a requirement for the `navigationDestination()` to work: the `value`/`for` must conform to the `Hashable` protocol. 
+
+# Day 44
+## Programmatic navigation
+We can create the navigation stack programmatically. We have to bind an array to the `NavigationStack` and then we have just to change the content of the array to trigger the `nagiationDestination()`. An array because there could be more than one view that we want to show.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var path: [Int] = []
+    
+    var body: some View {
+        NavigationStack(path: $path) {
+            VStack {
+                Button("Show 32") {
+                    path = [32]
+                }
+                
+                Button("Show 64") {
+                    path.append(64)
+                }
+                
+                Button("Show all") {
+                    path = [32, 64]
+                }
+            }
+            .navigationDestination(for: Int.self) { selection in
+                Text("You selected \(selection)")
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+![Presention of three views. The first one has the number 32, the second one has the number 64 and the third presents, as a stack, 64 and 32](/assets/images/2024-06-20-100-days-of-swiftui/navigation1.gif)
+
+We can go further and change the `path` state in other views. For example we want to go back to the first view pressing one button.
+
+{% highlight swift %}
+struct DetailView : View {
+    var number: Int
+    @Binding var path: [Int]
+    
+    var body: some View {
+        NavigationLink("Go to Random Number", value: Int.random(in: 1...1000))
+            .navigationTitle("Number: \(number)")
+            .toolbar(content: {
+                Button("Home") {
+                    path.removeAll()
+                }
+            })
+    }
+}
+
+struct ContentView: View {
+    @State private var path: [Int] = []
+    
+    var body: some View {
+        NavigationStack(path: $path) {
+            DetailView(number: 0, path: $path)
+                .navigationDestination(for: Int.self) { selection in
+                    DetailView(number: selection, path: $path)
+                }
+        }
+    }
+}
+{% endhighlight %}
+
+![Presention of many views. Each has a random number. The user presses the back button to go back and the home button to return to the first view](/assets/images/2024-06-20-100-days-of-swiftui/navigation2.gif)
+
+## NavigationPath
+How to handle path with different types? When the user touch the `NavigationLink` there isn't any problem: 
+
+{% highlight swift %}
+struct ContentView: View {
+
+    var body: some View {
+        NavigationStack{
+            List {
+                ForEach(0..<5) {i in
+                    NavigationLink("Select number: \(i)", value: i)
+                }
+                
+                ForEach(0..<5) {i in
+                    NavigationLink("Select string: \(i)", value: String(i))
+                }
+            }
+            .navigationDestination(for: Int.self) { selection in
+                Text("You are viewing the integer \(selection)")
+            }
+            .navigationDestination(for: String.self) { selection in
+                Text("You are viewing the string \(selection)")
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+What about the programmatic way? As we have seen before we have to bind an array to to the `path` attribute of the `NavigationStack` but in this case we cannot have an array of both `Int` and `String`. 
+
+The solution is using a `NavigationPath` which behaves as an array but accepts any type.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var path = NavigationPath()
+    
+    var body: some View {
+        NavigationStack(path: $path){
+            List {
+                ForEach(0..<5) {i in
+                    NavigationLink("Select number: \(i)", value: i)
+                }
+                
+                ForEach(0..<5) {i in
+                    NavigationLink("Select string: \(i)", value: String(i))
+                }
+            }
+            .toolbar(content: {
+                Button("Push 556") {
+                    path.append(556)
+                }
+                
+                Button("Push 'Hello'"){
+                    path.append("Hello")
+                }
+            })
+            .navigationDestination(for: Int.self) { selection in
+                Text("You are viewing the integer \(selection)")
+            }
+            .navigationDestination(for: String.self) { selection in
+                Text("You are viewing the string \(selection)")
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+## Store the NavigationPath
+We can save the `NavigationPath` for remembering where the user left.
+
+First of all, we create a class that holds the `NavigationPath` and save it on file when it change and read from file at initialization.
+
+{% highlight swift %}
+@Observable
+class PathStore{
+    var path: NavigationPath {
+        didSet {
+            save()
+        }
+    }
+    
+    private let savePath = URL.documentsDirectory.appending(path: "SavedPath")
+    
+    init() {
+        if let data = try? Data(contentsOf: savePath) {
+            if let decoded = try? JSONDecoder().decode(NavigationPath.CodableRepresentation.self, from: data) {
+                path = NavigationPath(decoded)
+                return
+            }
+        }
+        
+        path = NavigationPath()
+    }
+    
+    private func save() {
+        guard let representation = path.codable else {return}
+        
+        do {
+            let data = try JSONEncoder().encode(representation)
+            try data.write(to: savePath)
+        } catch {
+            print("Failed to save naigation data")
+        }
+    }
+}
+{% endhighlight %}
+
+It is worth noticing that we cannot save the `NavigationPath` directly because it could have non `Decodable` objects inside. We have to pass through its `CodableRepresentation`/`codable`.
+
+The rest of the code is similar to other codes we wrote today.
+
+{% highlight %}
+struct DetailView : View {
+    var number: Int
+    
+    var body: some View {
+        NavigationLink("Go to Random Number", value: Int.random(in: 1...1000))
+            .navigationTitle("Number: \(number)")
+    }
+}
+
+struct ContentView: View {
+    @State private var pathStore = PathStore()
+    
+    var body: some View {
+        NavigationStack(path: $pathStore.path) {
+            DetailView(number: 0)
+                .navigationDestination(for: Int.self) { selection in
+                    DetailView(number: selection)
+                }
+        }
+    }
+}
+{% endhighlight %}
+
+![Presention of many views. Each has a random number. The app can be closed and the navigation stack is remembered](/assets/images/2024-06-20-100-days-of-swiftui/navigation3.gif)
