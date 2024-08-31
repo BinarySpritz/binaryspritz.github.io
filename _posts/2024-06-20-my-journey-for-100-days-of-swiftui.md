@@ -5282,7 +5282,7 @@ It is worth noticing that we cannot save the `NavigationPath` directly because i
 
 The rest of the code is similar to other codes we wrote today.
 
-{% highlight %}
+{% highlight swift %}
 struct DetailView : View {
     var number: Int
     
