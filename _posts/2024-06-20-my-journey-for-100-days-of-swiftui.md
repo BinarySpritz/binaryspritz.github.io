@@ -67,6 +67,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 42](#day-42): Moonshot part 4/4
 - [Day 43](#day-43): more details on navigation 1/2 (`navigationDestination`)
 - [Day 44](#day-44): more details on navigation 2/2 (programmatic navigation)
+- [Day 45](#day-45): styling navigation
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -5307,3 +5308,41 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![Presention of many views. Each has a random number. The app can be closed and the navigation stack is remembered](/assets/images/2024-06-20-100-days-of-swiftui/navigation3.gif)
+
+# Day 45
+Today we look at how we can change the appearence of the neviation bar. There are some modifiers for the bar and the title:
+
+- `navigationBarTitleDisplayMode()` -> change how thw title is presented: `inline` or `large`
+- `toolbarBackground()` -> set the background (color) after the scroll
+- `toolbarColorScheme()` -> set the color scheme: `dark` or `light`
+- `toolbar()` -> set the visibility: `visible` or `hidden`
+
+Each modifier can specify the `for` parameter to tell at which component the modifier has to be applied: `navigationBar`, `tabBar`, or `bottomBar`. 
+
+We can change which buttons appears in the tollbar thanks to the `toolbar` modifer.
+
+There are a couple of ways to add new buttons in the toolbar:
+
+- Simply add `Button`s in the `toolbar`'s closure
+- Add a `ToolbarItem()` with inside the button. It allows to specify the placemente of the item with `ToolbarItem(palcement: .)`
+- Add a `ToolbarItemGroup` with inside some buttons. As the `ToolbarItem`, it allows to specify the `placement` for the group
+
+Last thing, we can make the title editable. It only works in `.inline` display mode and the title need to be binded to a state property:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var title = "Title goes here"
+    
+    var body: some View {
+        
+        NavigationStack {
+            Text("Hello World")
+            .navigationTitle($title)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+{% endhighlight %}
+
+![Near the title there is a arrow pointing down. When it is pressed, the title became a text input field and can be changed](/assets/images/2024-06-20-100-days-of-swiftui/navigation4.gif)
+
