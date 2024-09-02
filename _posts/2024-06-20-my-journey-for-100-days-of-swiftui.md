@@ -68,6 +68,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 43](#day-43): more details on navigation 1/2 (`navigationDestination`)
 - [Day 44](#day-44): more details on navigation 2/2 (programmatic navigation)
 - [Day 45](#day-45): styling navigation
+- [Day 46](#day-46): challenges with navigation
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -5346,3 +5347,240 @@ struct ContentView: View {
 
 ![Near the title there is a arrow pointing down. When it is pressed, the title became a text input field and can be changed](/assets/images/2024-06-20-100-days-of-swiftui/navigation4.gif)
 
+# Day 46
+Today we have three challenges to complete:
+
+1. In the iExpense project, we have to update the navigation with a `NavigationLink` instad of a sheet
+2. In the iExpense project, we have to change how the user insert the expense name, moving the `textField` to the title
+3. In the Moonshot project, we have to use the `NavigationLink`
+
+The first two challenges can be completed with a few change:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var expenses = Expenses()
+    
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Personal") {
+                    ForEach(expenses.items.filter({$0.type == "Personal"})) { item in
+                        ExpenseListItem(item: item)
+                    }
+                    .onDelete(perform: {removeItems(at: $0, for: "Personal")})
+                }
+                
+                Section("Business") {
+                    ForEach(expenses.items.filter({$0.type == "Business"})) { item in
+                        ExpenseListItem(item: item)
+                    }
+                    .onDelete(perform: {removeItems(at: $0, for: "Business")})
+                }
+            }
+            .navigationTitle("iExpense")
+            .toolbar {
+                NavigationLink(destination: AddView(expenses: expenses)) {
+                    Image(systemName: "plus")
+                }
+                
+            }
+        }
+    }
+    
+    func removeItems(at offsets: IndexSet, for type: String) {
+        let expensesToDelete = offsets.map { expenses.items.filter({ $0.type == type})[$0] }
+       
+        for expense in expensesToDelete {
+            expenses.items.removeAll(where: {$0.id == expense.id})
+        }
+    }
+}
+{% endhighlight %}
+
+{% highlight swift %}
+struct AddView: View {
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var name = "New expense name"
+    @State private var type = "Personal"
+    @State private var amount = 0.0
+    
+    var expenses: Expenses
+    
+    let types = ["Business", "Personal"]
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                // TextField("Name", text: $name)
+                
+                Picker("Type", selection: $type) {
+                    ForEach(types, id: \.self) {
+                        Text($0)
+                    }
+                }
+                
+                TextField("Amount", value: $amount, format: .currency(code: Locale.current.currency?.identifier ?? "EUR"))
+                    .keyboardType(.decimalPad)
+            }
+            .navigationTitle($name)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden()
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let item = ExpenseItem(name: name, type: type, amount: amount)
+                        expenses.items.append(item)
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+![New AddView of iExpense. Now with a cancel button which dismiss the view and the expense name can be edited in the title](/assets/images/2024-06-20-100-days-of-swiftui/newiExpense.png)
+
+The next challenge requires some more changes.
+
+First of all we have to make Mission, CrewRole, and Astronaut conform to the `Hashable` protocol. Then we can change the `NavigationLink`s to make them use the `value` propoerty. Both the `navigationDestination` must be set in the first view (the one with the `NavigationStack`)
+
+{% highlight swift %}
+struct ContentView: View {
+    let astronauts: [String: Astronaut] = Bundle.main.decode("astronauts.json")
+    let missions: [Mission] = Bundle.main.decode("missions.json")
+    
+    @State private var isGridView: Bool = true
+    
+    var colums: [GridItem] {
+        [GridItem(.adaptive(minimum: isGridView ? 150 : .infinity))]
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: colums) {
+                    ForEach(missions) { mission in
+                        NavigationLink(value: mission, label: {
+                            VStack {
+                                Image(mission.image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 100, height: 100)
+                                    .padding()
+                                
+                                VStack {
+                                    Text(mission.displayName)
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                    
+                                    Text(mission.formattedLaunchDate)
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                }
+                                .padding(.vertical)
+                                .frame(maxWidth: .infinity)
+                                .background(.lightBackground)
+                            }
+                            .clipShape(.rect(cornerRadius: 10))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(.lightBackground)
+                            }
+                        })
+                    }
+                }
+                .padding([.horizontal, .bottom])
+            }
+            .toolbar(content: {
+                Button(isGridView ? "To list" : "To grid") {
+                    isGridView.toggle()
+                }
+            })
+            .navigationTitle("Moonshot")
+            .background(.darkBackground)
+            .preferredColorScheme(.dark)
+            .navigationDestination(for: Mission.self, destination: { selection in
+                MissionView(mission: selection, astronauts: astronauts)
+            })
+            .navigationDestination(for: Astronaut.self) { selection in
+                AstronautView(astronaut: selection)
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+{% highlight swift %}
+struct MissionView: View {
+    let mission: Mission
+    let crew: [CrewMember]
+    
+    var body: some View {
+        ScrollView {
+            VStack {
+                VStack {
+                    Image(mission.image)
+                        .resizable()
+                        .scaledToFit()
+                        .containerRelativeFrame(.horizontal) {width, axis in
+                            width * 0.6
+                        }
+                    Text(mission.formattedLaunchDate)
+                        .font(.headline)
+                        .padding(.top)
+                }
+                
+                VStack(alignment: .leading) {
+                    CustomDivider()
+                    
+                    Text("Mission Highlights")
+                        .font(.title.bold())
+                        .padding(.bottom, 5)
+                    
+                    Text(mission.description)
+                    
+                    CustomDivider()
+                    
+                    Text("Crew")
+                        .font(.title.bold())
+                        .padding(.bottom, 5)
+                }
+                .padding(.horizontal)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(crew, id: \.role) {crewMember in
+                            NavigationLink(value: crewMember.astronaut, label: {CrewMemberView(crewMember: crewMember)})
+                        }
+                    }
+                }
+            }
+            .padding(.bottom)
+        }
+        .navigationTitle(mission.displayName)
+        .navigationBarTitleDisplayMode(.inline)
+        .background(.darkBackground)
+    }
+    
+    init(mission: Mission, astronauts: [String: Astronaut]) {
+        self.mission = mission
+        
+        self.crew = mission.crew.map({ member in
+            if let astronaut = astronauts[member.name] {
+                return CrewMember(role: member.role, astronaut: astronaut)
+            } else {
+                fatalError("Missing \(member.name)")
+            }
+        })
+    }
+}
+{% endhighlight %}
