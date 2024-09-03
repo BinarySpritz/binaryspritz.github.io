@@ -69,6 +69,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 44](#day-44): more details on navigation 2/2 (programmatic navigation)
 - [Day 45](#day-45): styling navigation
 - [Day 46](#day-46): challenges with navigation
+- [Day 47](#day-47): ActivityTracker
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -5584,3 +5585,146 @@ struct MissionView: View {
     }
 }
 {% endhighlight %}
+
+# Day 47
+Today we work on an app to track activities. It is a challenge so everything is written by us. The requirements are:
+
+1. The user can add new activities
+    1. Each activity has a title, a description, and the number of time it has been done
+2. The user can see the list of activities in a list
+3. The user can edit activities already added
+
+My approach is: a list view and a create/edit view.
+
+First of all the models:
+
+{% highlight swift %}
+struct Activity: Identifiable, Codable, Hashable, Equatable {
+    var id = UUID()
+    var title: String = ""
+    var description: String = ""
+    var repetition: Int = 0
+}
+{% endhighlight %}
+
+{% highlight swift %}
+@Observable
+class ActivityList {
+    var activities: [Activity] = [] {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(activities) {
+                UserDefaults.standard.set(encoded, forKey: "Activities")
+            }
+        }
+    }
+    
+    init() {
+        if let savedItems = UserDefaults.standard.data(forKey: "Activities") {
+            if let decodedItems = try? JSONDecoder().decode([Activity].self, from: savedItems) {
+                self.activities = decodedItems
+                return
+            }
+        }
+        
+        self.activities = []
+    }
+    
+    func update(_ activity: Activity, title: String, description: String, repetition: Int) {
+        if let index = activities.firstIndex(of: activity) {
+            let newActivity = Activity(title: title, description: description, repetition: repetition)
+            activities[index] = newActivity
+        } else {
+            add(Activity(title: title, description: description, repetition: repetition))
+        }
+    }
+    
+    func add(_ activity: Activity) {
+        activities.append(activity)
+    }
+}
+{% endhighlight %}
+
+Then we can move into implementing the views:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var activityList = ActivityList()
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(activityList.activities) { activity in
+                    NavigationLink(value: activity) {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(activity.title)
+                                    .font(.headline)
+                                Text(activity.description)
+                                    .font(.subheadline)
+                            }
+                            
+                            Spacer()
+
+                            Text("\(activity.repetition)")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Activity tracker")
+            .toolbar {
+                NavigationLink(value: Activity()) {
+                    Image(systemName: "plus")
+                }
+            }
+            .navigationDestination(for: Activity.self) { selection in
+                ActivityView(activity: selection, activityList: activityList)
+            }
+        }
+    }
+}
+{% endhighlight %}
+
+{% highlight swift %}
+struct ActivityView: View {
+    @Environment(\.dismiss) var dismiss
+    
+    var activity: Activity
+    var activityList: ActivityList
+    
+    @State private var title: String
+    @State private var description: String
+    @State private var repetition: Int
+    
+    init(activity: Activity, activityList: ActivityList) {
+        self.activity = activity
+        self.activityList = activityList
+        
+        self.title = activity.title
+        self.description = activity.description
+        self.repetition = activity.repetition
+    }
+    
+    var body: some View {
+        Form {
+            TextField("Title", text: $title)
+                
+            TextField("Description", text: $description)
+            
+            Stepper("Repetition: \(repetition)", value: $repetition)
+        }
+        .navigationTitle("Activity details")
+        .toolbar(content: {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    activityList.update(activity, title: title, description: description, repetition: repetition)
+                    dismiss()
+                }
+            }
+        })
+    }
+}
+{% endhighlight %}
+
+The idea and the functionalites are similar to iExpense.
+
+![Animation which shows the creation of a new activity, the close and reopen of the app showing the activity is still there, and the editation of the activity](/assets/images/2024-06-20-100-days-of-swiftui/activityTracker.gif)
