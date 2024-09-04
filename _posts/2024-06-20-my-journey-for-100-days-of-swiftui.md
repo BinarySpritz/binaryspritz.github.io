@@ -70,6 +70,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 45](#day-45): styling navigation
 - [Day 46](#day-46): challenges with navigation
 - [Day 47](#day-47): ActivityTracker
+- [Day 48](#day-48): Break
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -5728,3 +5729,6 @@ struct ActivityView: View {
 The idea and the functionalites are similar to iExpense.
 
 ![Animation which shows the creation of a new activity, the close and reopen of the app showing the activity is still there, and the editation of the activity](/assets/images/2024-06-20-100-days-of-swiftui/activityTracker.gif)
+
+# Day 48
+Today we aren't studying anything technical but listening to a [talk](https://www.youtube.com/watch?v=U1gP4EcT_wQ).
