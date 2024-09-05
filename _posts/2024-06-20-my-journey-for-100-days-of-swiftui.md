@@ -5732,3 +5732,156 @@ The idea and the functionalites are similar to iExpense.
 
 # Day 48
 Today we aren't studying anything technical but listening to a [talk](https://www.youtube.com/watch?v=U1gP4EcT_wQ).
+
+# Day 49
+After a little break go deeper into data. At this point we are goining to retrieve data from the Internet.
+
+First of all we need to define our data model. We are going to collect some data from the iTunes service (songs and collection).
+
+{% highlight swift %}
+struct Response: Codable {
+    var results: [Result]
+}
+
+struct Result: Codable {
+    var trackId: Int
+    var trackName: String
+    var collectionName: String
+}
+{% endhighlight %}
+
+Then we build our interface as usual but with a little twist:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var results: [Result] = []
+    
+    var body: some View {
+        List(results, id: \.trackId) {item in
+            VStack(alignment: .leading) {
+                Text(item.trackName)
+                    .font(.headline)
+                
+                Text(item.collectionName)
+            }
+        }
+        .task {
+            await loadData()
+        }
+    }
+    
+    func loadData() async {
+        // 1. Create URL pointo to Apple Service
+        guard let url = URL(string: "https://itunes.apple.com/search?term=taylor+swift&entity=song") else {
+            print("Invalid URL")
+            return
+        }
+        
+        // 2. Get data from URL. This is the async part (the function could wiat some time)
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            
+            // 3. Decode data into Respones
+            if let response = try? JSONDecoder().decode(Response.self, from: data) {
+                results = response.results
+            }
+        } catch {
+            print("Invalid data")
+        }
+    }
+}
+{% endhighlight %}
+
+As you can see we have introduced a couple of new things:
+
+- `func ... async` declares an asynchronous function 
+- `.taks {...}` is a "context" from which we can call asynchronous functions
+- `await` is a keyword to call asynchronous functions
+- `UrlSessions` allows us to get data from the internet
+
+![A list with Taylor Swift's songs retrieved from the internet](/assets/images/2024-06-20-100-days-of-swiftui/dataFromURL.png)
+
+We can also show images from the Internet. We cannot use an `Image` but we have to use an `AsyncImage` and there are three ways to use it:
+
+{% highlight swift %}
+struct ContentView: View {
+
+    var body: some View {
+        AsyncImage(url: URL(string: "https://binaryspritz.com/assets/logo.png"), scale: 3)
+    }
+}
+{% endhighlight %}
+
+This first method is the most simple but also the less customizable. We can only change the scale and anything else.
+
+{% highlight swift %}
+struct ContentView: View {
+    
+    var body: some View {
+        AsyncImage(url: URL(string: "https://binaryspritz.com/assets/logo.png")) { image in
+            image
+                .resizable()
+                .scaledToFit()
+        } placeholder: {
+            ProgressView()
+        }
+        .frame(width: 200, height: 200)
+    }
+}
+{% endhighlight %}
+
+This second way gives us the image after the loading (during while the `preview` is shown). In this way we can change is as we like.
+
+The third way gives us a way to handle errors:
+
+{% highlight swift %}
+struct ContentView: View {
+    
+    var body: some View {
+        AsyncImage(url: URL(string: "https://binaryspritz.com/assets/logo.png")) { phase in
+            if let image = phase.image {
+                image
+                    .resizable()
+                    .scaledToFit()
+            } else if let error = phase.error {
+                Text("There was an error loading the image (\(error.localizedDescription)")
+            } else {
+                ProgressView()
+            }
+        }
+        .frame(width: 200, height: 200)
+    }
+}
+{% endhighlight %}
+
+
+![BinarySpritz's logo downloded from the internet and show as image in a view](/assets/images/2024-06-20-100-days-of-swiftui/imageFromURL.png)
+
+Last thing for today is form validation. We can apply the `disable` modifier to a section of a form do disable all its content (for example the "submit" button) and binding the condition to a computed property.
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var username = ""
+    @State private var email = ""
+    
+    var disabledForm: Bool {
+        username.count < 5 || email.count < 5
+    }
+    
+    var body: some View {
+        Form {
+            Section {
+                TextField("Username", text: $username)
+                TextField("Email", text: $email)
+            }
+            
+            Section {
+                Button("Create account") {
+                    print("Creating account")
+                }
+            }
+            .disabled(disabledForm)
+        }
+    }
+}
+{% endhighlight %}
