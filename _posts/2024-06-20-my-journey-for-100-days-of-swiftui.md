@@ -71,6 +71,9 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 46](#day-46): challenges with navigation
 - [Day 47](#day-47): ActivityTracker
 - [Day 48](#day-48): Break
+- [Day 49](#day-49): Connection to the Internet (`URLSession`) and `AsyncImage`s
+- [Day 50](#day-50): Custom codable keys, Haptic Engine, and Cupcake Corner 1/3
+
 
 # Day 1
 The day started with a brief introduction to the Swift programming language and how **variables**, **constants** and **literals** work in an assignment statement (the type inference concept is briefly introduced). 
@@ -5885,3 +5888,180 @@ struct ContentView: View {
     }
 }
 {% endhighlight %}
+
+# Day 50
+Before starting diving into our app we need to understand better a couple of things.
+
+## Codable for Observable classe
+When we add the `Codable` protocol to a class it will automatically allows us to generate string representation of objects of that class. For example:
+
+{% highlight swift %}
+@Observable
+class User: Codable {
+    var name = "Marco"
+}
+
+struct ContentView: View {
+    
+    var body: some View {
+        Button("Encode User") {
+            encodeUser()
+        }
+    }
+    
+    func encodeUser() {
+        let data = try! JSONEncoder().encode(User())
+        let str = String(decoding: data, as: UTF8.self)
+        
+        print(str)
+    }
+}
+{% endhighlight %}
+
+Will print:
+
+{% highlight json %}
+{
+    "_$observationRegistrar":{},
+    "_name":"Marco"
+}
+{% endhighlight %}
+
+Which is not the best looking JSON. Swift gives us a way to changes to automatic behaviour. We have to define an `enum` named `CodingKeys` which conforms to the `CodingKey` protocol.
+
+{% highlight swift %}
+@Observable
+class User: Codable {
+    enum CodingKeys: String, CodingKey {
+        case _name = "name"
+    }
+    
+    var name = "Marco"
+}
+{% endhighlight %}
+
+Now the resulting JSON will be:
+
+{% highlight json %}
+{
+    "name":"Marco"
+}
+{% endhighlight %}
+
+## Haptic effects
+There are two ways of interacting with the Haptic Engine of an iPhone.
+
+The first one is simple. Just add the modifies `sensoryFeedback` to a view, add the parameter `SensoryFeedback` (an enum to configure the type of feedback) and `trigger` (a state which changes will trigger the feedback).
+
+Another solution is configuring the Haptic Engine with much more details:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var engine: CHHapticEngine?
+    
+    var body: some View {
+        Button("Play haptic", action: complexSuccess)
+            .onAppear(perform: prepareHaptics)
+    }
+    
+    func prepareHaptics() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        
+        do {
+            engine = try CHHapticEngine()
+            try engine?.start()
+        } catch {
+            print("There was an error creating the engine: \(error.localizedDescription)")
+        }
+    }
+    
+    func complexSuccess() {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        
+        var events: [CHHapticEvent] = []
+        
+        let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
+        let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1)
+        let event = CHHapticEvent(eventType: .hapticTransient, parameters: [intensity, sharpness], relativeTime: 0)
+        events.append(event)
+        
+        do {
+            let pattern = try CHHapticPattern(events: events, parameters: [])
+            let player = try engine?.makePlayer(with: pattern)
+            try player?.stop(atTime: 0)
+        } catch {
+            print("Cannot play pattenr: \(error.localizedDescription)")
+        }
+    }
+}
+{% endhighlight %}
+
+## Cupcake corner
+Finally, we start implementing our app: Cupcake Corner. 
+
+We start defining our data model:
+
+{% highlight swift %}
+@Observable
+class Order {
+    static let types = ["Vanilla", "Strawberry", "Chocolate", "Rainbow"]
+    
+    var type = 0
+    var quantity = 3
+    
+    var specialRequestEnabled = false {
+        didSet {
+            if specialRequestEnabled == false {
+                extraFrosting = false
+                addSprinkles = false
+            }
+        }
+    }
+    var extraFrosting = false
+    var addSprinkles = false
+}
+{% endhighlight %}
+
+And then moving into the form to customize our order:
+
+{% highlight swift %}
+struct ContentView: View {
+    @State private var order = Order()
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("Select your cake type", selection: $order.type) {
+                        ForEach(Order.types.indices, id:\.self) {
+                            Text(Order.types[$0])
+                        }
+                    }
+                    
+                    Stepper("Number of cakes", value: $order.quantity, in: 3...20)
+                }
+                
+                Section {
+                    Toggle("Any special request?", isOn: $order.specialRequestEnabled)
+                    
+                    if order.specialRequestEnabled {
+                        Toggle("Add extra frosting", isOn: $order.extraFrosting)
+                        
+                        Toggle("Add extra sprinkles", isOn: $order.addSprinkles)
+                    }
+                }
+                
+                Section {
+                    NavigationLink("Delivery details") {
+                        AddressView(order: order)
+                    }
+                }
+            }
+            .navigationTitle("Cupcake Corner")
+        }
+    }
+}
+{% endhighlight %}
+
+![A form asking for the type of cupcake, the number of them, and if there are any special requests](/assets/images/2024-06-20-100-days-of-swiftui/cupcakeCornerV1.png)
+
