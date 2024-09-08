@@ -73,6 +73,7 @@ There are two reasons for this diary to exist and be publicly available: first, 
 - [Day 48](#day-48): Break
 - [Day 49](#day-49): Connection to the Internet (`URLSession`) and `AsyncImage`s
 - [Day 50](#day-50): Custom codable keys, Haptic Engine, and Cupcake Corner 1/3
+- [Day 51](#day-51): Cupcake Corner 2/3
 
 
 # Day 1
@@ -6064,4 +6065,175 @@ struct ContentView: View {
 {% endhighlight %}
 
 ![A form asking for the type of cupcake, the number of them, and if there are any special requests](/assets/images/2024-06-20-100-days-of-swiftui/cupcakeCornerV1.png)
+
+# Day 51
+Today we implemnt some neet functionality of Cupcake Corner:
+
+- Form validation for the address
+- Data upload and request from a web service
+
+First of all let's create the two `AddressView`:
+
+{%highlight swift %}
+struct AddressView: View {
+    @Bindable var order: Order
+
+    
+    var body: some View {
+        Form {
+            Section {
+                TextField("Name", text: $order.name)
+                TextField("Street address", text: $order.streetAddress)
+                TextField("City", text: $order.city)
+                TextField("Zip code", text: $order.zipCode)
+            }
+            
+            Section {
+                NavigationLink("Check out") {
+                    CheckoutView(order: order)
+                }
+            }
+            .disabled(order.hasValidAddress == false)
+        }
+        .navigationTitle("Delivery details")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+{% endhighlight %}
+
+We use `@Bindable` to tell SwiftUI that `order` is a bindable variable (declared as `@State` somewhere else).
+
+Then we have the `.disabled(order.hasValidAddress == false)` that reflects some additions made to the `Order` class:
+
+{% highlight swift %}
+@Observable
+class Order: Codable {    
+    static let types = ["Vanilla", "Strawberry", "Chocolate", "Rainbow"]
+    
+    var type = 0
+    var quantity = 3
+    
+    var specialRequestEnabled = false {
+        didSet {
+            if specialRequestEnabled == false {
+                extraFrosting = false
+                addSprinkles = false
+            }
+        }
+    }
+    var extraFrosting = false
+    var addSprinkles = false
+    
+    var name = ""
+    var streetAddress = ""
+    var city = ""
+    var zipCode = ""
+    
+    var hasValidAddress: Bool {
+        if name.isEmpty || streetAddress.isEmpty || city.isEmpty || zipCode.isEmpty {
+            return false
+        }
+        
+        return true
+    }
+    
+    var cost: Decimal {
+        // 2$ per cake
+        var cost = Decimal(quantity) * 2
+        
+        // complicate cakes costs more
+        cost += Decimal(type) / 2
+        
+        // $1/cake for extra frosting
+        if extraFrosting {
+            cost = Decimal(quantity)
+        }
+        
+        // $0.50/cake for sprinkles
+        if addSprinkles {
+            cost = Decimal(quantity) / 2
+        }
+        
+        return cost
+    }
+}
+{% endhighlight %}
+
+Then we can move on the `CheckoutView` which will handle the connection to the webserive to "place" the order:
+
+{% highlight swift %}
+struct CheckoutView: View {
+    var order: Order
+    
+    @State private var confirmationMessage = ""
+    @State private var showingConfirmation = false
+    
+    var body: some View {
+        ScrollView {
+            VStack {
+                AsyncImage(url: URL(string: "https://hws.dev/img/cupcakes@3x.jpg"), scale: 3) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                } placeholder: {
+                    ProgressView()
+                }
+                .frame(height: 233)
+                
+                Text("Your total cost is \(order.cost, format: .currency(code: "USD"))")
+                    .font(.title)
+                
+                Button("Place order") {
+                    Task{
+                        await placeOrder()
+                    }
+                }
+                .padding()
+            }
+        }
+        .navigationTitle("Checkout")
+        .navigationBarTitleDisplayMode(.inline)
+        .scrollBounceBehavior(.basedOnSize)
+        .alert("Thank you!", isPresented: $showingConfirmation) {
+            Button("Ok") { showingConfirmation.toggle() }
+        } message: {
+            Text(confirmationMessage)
+        }
+    }
+    
+    func placeOrder() async {
+        guard let encoded = try? JSONEncoder().encode(order) else {
+            print("Fail to record order")
+            return
+        }
+        
+        let url = URL(string: "https://reqres.in/api/cupcakess")!
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpMethod = "POST"
+        
+        do {
+            let (data, _) = try await URLSession.shared.upload(for: request, from: encoded)
+            
+            let decodedOrder = try JSONDecoder().decode(Order.self, from: data)
+            confirmationMessage = "Your order for \(decodedOrder.quantity)x\(Order.types[decodedOrder.type].lowercased()) cupcakes is on its way!"
+            showingConfirmation = true
+        } catch {
+            print("Check out failed: \(error.localizedDescription)")
+        }
+    }
+}
+{% endhighlight %}
+
+Besides an `AsyncImage` there is the `placeOrder` function which upload the JSON version of our order to `regres.in` (a [web serice](https://regres.in) to test clients). And then, we decode the response in another object of type `Order` (just because regres.in works in this way (it sends back the json we send to him)). The result is shown in an alert.
+
+<div style="max-width: 100%;">
+    <img id="Cupcake" src="/assets/images/2024-06-20-100-days-of-swiftui/cupcakeV2b.png" alt="Form to insert the type and the quantity of cupcakes to order with a navigation link to the address form">
+        <div style="display: flex; flex-direction: row; justify-content: space-evenly">
+        <button onclick="changeImage('Cupcake', '/assets/images/2024-06-20-100-days-of-swiftui/cupcakeV2b.png', 'Form to insert the type and the quantity of cupcakes to order with a navigation link to the address form')">1</button>
+        <button onclick="changeImage('Cupcake', '/assets/images/2024-06-20-100-days-of-swiftui/cupcakeV2c.png', 'Form to insert the address data with a navigation link to the checkout view')">2</button>
+        <button onclick="changeImage('Cupcake', '/assets/images/2024-06-20-100-days-of-swiftui/cupcakeV2d.png', 'Review of the cupcakes orderd with a computed price and a button to place the order')">3</button>
+        <button onclick="changeImage('Cupcake', '/assets/images/2024-06-20-100-days-of-swiftui/cupcakeV2e.png', 'An alert showing how many cupcakes have been ordered and their types')">4</button>
+    </div>
+</div>
 
