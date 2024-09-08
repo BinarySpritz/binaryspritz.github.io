@@ -6146,12 +6146,12 @@ class Order: Codable {
         
         // $1/cake for extra frosting
         if extraFrosting {
-            cost = Decimal(quantity)
+            cost += Decimal(quantity)
         }
         
         // $0.50/cake for sprinkles
         if addSprinkles {
-            cost = Decimal(quantity) / 2
+            cost += Decimal(quantity) / 2
         }
         
         return cost
