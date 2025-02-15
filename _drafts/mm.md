@@ -131,11 +131,11 @@ Next, let's go through some examples to demonstrate how to apply this method.
 
 Consider the following recurrence:
 
-<!-- Example equation here -->
+$$ T(n) = 2T\left(\frac{n}{2}\right) + n $$
 
-Using the flowchart, we first isolate the base components.
+Using the flowchart, we first isolate the base components: a = 2, b = 2, and f(n) = n. Next we compute $$ n^{\log_a{b}} = n^{\log_2{2}} = n $$ and take the limit:
 
-We compute $$ \log_b{a} $$ and take the limit:
+$$ \lim_{n \to \infty } \frac{f(n)}{ n^{\log_a{b}}} = \lim_{n \to \infty } \frac{n}{ n } = 1 $$
 
 <!-- Example calculations -->
 
